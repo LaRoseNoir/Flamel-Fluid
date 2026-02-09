@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Flamel Fluid</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Header -->
+  <div id="header">
+    <!-- Le patrimoine financier, patrimoine visé, patrimoine simulé et le logo seront placés ici par JavaScript -->
+  </div>
+
+  <!-- Land - Conteneur central -->
+  <div id="land">
+    <!-- Tous les bocaux seront placés ici par JavaScript -->
+  </div>
+
+  <!-- Footer -->
+  <div id="footer">
+    <!-- La mission sera placée ici par JavaScript -->
+  </div>
+
+  <div id="fenetre" tabindex="0">
+    <div id="fenetreHeader">
+      <h3>Création de Conteneur</h3>
+      <button id="closeBtn" onclick="fermerFenetre()">✖</button>
+    </div>
+  </div>
+
+  <div id="menuContextuel" class="menu-contextuel">
+    <button id="btnAncrer">Ancrer</button>
+    <button id="btnRenommer">Renommer</button>
+    <button id="btnSupprimer">Supprimer</button>
+    <button id="btnVersement">Versement</button>
+    <button id="btnParametre">Paramètre</button>
+  </div>
+
+  <!-- Bouton pour ouvrir le graphique -->
+  <button id="graphiqueBtn" title="Voir l'évolution du patrimoine">📈</button>
+
+  <!-- Fenêtre du graphique -->
+  <div id="graphiqueFenetre">
+    <div id="graphiqueHeader">
+      <h2>📊 Évolution du Patrimoine Financier</h2>
+      <button id="graphiqueCloseBtn">✖</button>
+    </div>
+    
+    <div id="graphiqueContainer">
+      <canvas id="graphiqueCanvas"></canvas>
+    </div>
+    
+    <div id="graphiqueControls">
+      <button id="enregistrerPointBtn">📍 Enregistrer point actuel</button>
+      <button id="supprimerDernierPointBtn">🗙 Supprimer dernier point</button>
+      <button id="effacerHistoriqueBtn">🗑️ Effacer historique</button>
+    </div>
+    
+    <div id="graphiqueStats">
+      <div class="stat-item">
+        <div class="stat-label">Patrimoine actuel</div>
+        <div class="stat-value" id="statActuel">0 €</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-label">Progression vers objectif</div>
+        <div class="stat-value" id="statProgression">0%</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-label">Points enregistrés</div>
+        <div class="stat-value" id="statPoints">0</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-label">Plus haut</div>
+        <div class="stat-value" id="statMax">0 €</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-label">Plus bas</div>
+        <div class="stat-value" id="statMin">0 €</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-label">Évolution</div>
+        <div class="stat-value" id="statEvolution">0 €</div>
+      </div>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
