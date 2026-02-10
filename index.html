@@ -7,20 +7,11 @@
 </head>
 <body>
 
-  <!-- Header -->
-  <div id="header">
-    <!-- Le patrimoine financier, patrimoine visé, patrimoine simulé et le logo seront placés ici par JavaScript -->
-  </div>
+  <div id="header"></div>
 
-  <!-- Land - Conteneur central -->
-  <div id="land">
-    <!-- Tous les bocaux seront placés ici par JavaScript -->
-  </div>
+  <div id="land"></div>
 
-  <!-- Footer -->
-  <div id="footer">
-    <!-- La mission sera placée ici par JavaScript -->
-  </div>
+  <div id="footer"></div>
 
   <div id="fenetre" tabindex="0">
     <div id="fenetreHeader">
@@ -37,10 +28,8 @@
     <button id="btnParametre">Paramètre</button>
   </div>
 
-  <!-- Bouton pour ouvrir le graphique -->
   <button id="graphiqueBtn" title="Voir l'évolution du patrimoine">📈</button>
 
-  <!-- Fenêtre du graphique -->
   <div id="graphiqueFenetre">
     <div id="graphiqueHeader">
       <h2>📊 Évolution du Patrimoine Financier</h2>
@@ -84,6 +73,32 @@
       </div>
     </div>
   </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBKKC8H7hhTLxUQ6klqc5nlZBlbowDEi3Q",
+      authDomain: "flamel-fluid.firebaseapp.com",
+      projectId: "flamel-fluid",
+      storageBucket: "flamel-fluid.firebasestorage.app",
+      messagingSenderId: "88649327956",
+      appId: "1:88649327956:web:a9cf20ed16398b950ad4c1",
+      measurementId: "G-SHMPDKEFH7"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    // On rend les outils Google disponibles pour ton fichier script.js
+    window.db = db;
+    window.fbSetDoc = setDoc;
+    window.fbGetDoc = getDoc;
+    window.fbDoc = doc;
+
+    console.log("Firebase est prêt pour la synchro !");
+  </script>
 
   <script src="script.js"></script>
 </body>
