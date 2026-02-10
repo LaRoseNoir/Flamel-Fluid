@@ -2950,17 +2950,17 @@ function afficherParametre(bocalElem, keepObjectif = null, keepSimulation = null
 // ---------------------------
 let homePage, mainPage, monthPage;
 
-function createPages() {
+  function createPages() {
   // Page principale (conteneurs)
   mainPage = document.createElement("div");
   mainPage.id = "mainPage";
-  mainPage.style.display = "block";
+  mainPage.style.display = "none";
   
   // Page home
   homePage = document.createElement("div");
   homePage.id = "homePage";
   Object.assign(homePage.style, {
-    display: "none",
+    display: "flex",
     position: "fixed",
     top: "0",
     left: "0",
@@ -2985,7 +2985,7 @@ function createPages() {
     width: "100%"
   });
   
-  // Logo
+  // Logo - MODIFIÉ : même logique que setupLogo()
   const logoContainer = document.createElement("div");
   Object.assign(logoContainer.style, {
     display: "flex",
@@ -3007,6 +3007,48 @@ function createPages() {
     maxHeight: "80px",
     display: "block"
   });
+  
+  // Chercher le logo dans le même dossier
+  const tryFiles = ["Logo.png", "Logo.jpg", "Logo.jpeg", "Logo.svg", "Logo.gif", "logo.png", "logo.jpg", "logo.jpeg", "logo.svg", "logo.gif"];
+  let tryIndex = 0;
+
+  function tryNextLogoHome() {
+    if (tryIndex >= tryFiles.length) {
+      // Si aucun logo trouvé, utiliser un placeholder stylé
+      logoImg.style.display = "none";
+      const placeholder = document.createElement("div");
+      placeholder.innerHTML = "💧";
+      Object.assign(placeholder.style, {
+        fontSize: "48px",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        width: "100%",
+        height: "100%"
+      });
+      logoContainer.appendChild(placeholder);
+      return;
+    }
+    
+    const file = tryFiles[tryIndex++];
+    const path = file; // Utiliser le chemin relatif (même dossier)
+    
+    const tester = new Image();
+    tester.onload = function() {
+      logoImg.src = path;
+      logoImg.style.display = "block";
+      const ph = logoContainer.querySelector(".logo-placeholder");
+      if (ph) ph.remove();
+    };
+    tester.onerror = function() {
+      tryNextLogoHome();
+    };
+    tester.src = path;
+  }
+
+  tryNextLogoHome();
+  
+  logoContainer.appendChild(logoImg);
   
   // Nom de l'application
   const appName = document.createElement("h1");
@@ -3031,44 +3073,6 @@ function createPages() {
     lineHeight: "1.5"
   });
   
-  // Charger le logo
-  const baseFolder = "C:/Users/Estheban/Pictures/Flamel Fluid/";
-  const tryFiles = ["Logo.png","Logo.jpg","Logo.jpeg","Logo.svg","Logo.gif"];
-  let tryIndex = 0;
-
-  function tryNextLogo() {
-    if (tryIndex >= tryFiles.length) {
-      // Si aucun logo trouvé, utiliser un placeholder stylé
-      logoImg.style.display = "none";
-      const placeholder = document.createElement("div");
-      placeholder.innerHTML = "💧";
-      Object.assign(placeholder.style, {
-        fontSize: "48px",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        width: "100%",
-        height: "100%"
-      });
-      logoContainer.appendChild(placeholder);
-      return;
-    }
-    const file = tryFiles[tryIndex++];
-    const path = "file:///" + encodeURI(baseFolder + file).replace(/^file:\/+/, "");
-    const tester = new Image();
-    tester.onload = function() {
-      logoImg.src = path;
-      logoImg.style.display = "block";
-    };
-    tester.onerror = function() {
-      tryNextLogo();
-    };
-    tester.src = path;
-  }
-
-  tryNextLogo();
-  
-  logoContainer.appendChild(logoImg);
   headerContainer.appendChild(logoContainer);
   headerContainer.appendChild(appName);
   headerContainer.appendChild(appSubtitle);
@@ -3167,9 +3171,50 @@ function createPages() {
     monthButton.style.boxShadow = "0 2px 4px rgba(0,0,0,0.2)";
   });
   
-  // Indication d'information
+  // Bouton Matrix - NOUVEAU
+  const matrixButton = document.createElement("button");
+  matrixButton.textContent = "Matrix";
+  matrixButton.className = "home-button matrix-button";
+  Object.assign(matrixButton.style, {
+    padding: "16px 32px",
+    fontSize: "20px",
+    backgroundColor: "black",
+    color: "white",
+    border: "none",
+    borderRadius: "12px",
+    cursor: "pointer",
+    fontWeight: "bold",
+    width: "100%",
+    boxShadow: "0 4px 8px rgba(0,0,0,0.2)",
+    transition: "all 0.3s ease",
+    letterSpacing: "1px"
+  });
+  
+  matrixButton.addEventListener("click", function() {
+    // Ouvrir la feuille Google Sheets dans un nouvel onglet
+    window.open("https://docs.google.com/spreadsheets/d/1X0qlMK5ycdvhQ66kEA14vLbnwD0cLkbHguSKiNmnkDI/edit?usp=sharing", "_blank");
+  });
+  
+  matrixButton.addEventListener("mouseenter", function() {
+    matrixButton.style.backgroundColor = "#333";
+    matrixButton.style.transform = "translateY(-2px)";
+    matrixButton.style.boxShadow = "0 6px 12px rgba(0,0,0,0.25)";
+  });
+  
+  matrixButton.addEventListener("mouseleave", function() {
+    matrixButton.style.backgroundColor = "black";
+    matrixButton.style.transform = "translateY(0)";
+    matrixButton.style.boxShadow = "0 4px 8px rgba(0,0,0,0.2)";
+  });
+  
+  matrixButton.addEventListener("mousedown", function() {
+    matrixButton.style.transform = "translateY(1px)";
+    matrixButton.style.boxShadow = "0 2px 4px rgba(0,0,0,0.2)";
+  });
+  
+  // Indication d'information mise à jour
   const infoText = document.createElement("p");
-  infoText.textContent = "Sélectionnez une interface";
+  infoText.textContent = "Sélectionnez une interface ou accédez à la Matrix";
   Object.assign(infoText.style, {
     fontSize: "14px",
     color: "#999",
@@ -3181,6 +3226,7 @@ function createPages() {
   // Assembler les boutons
   buttonsContainer.appendChild(mainButton);
   buttonsContainer.appendChild(monthButton);
+  buttonsContainer.appendChild(matrixButton); // Nouveau bouton
   buttonsContainer.appendChild(infoText);
   
   // Ajouter tout au Home
@@ -3248,12 +3294,11 @@ function createMonthPage() {
     borderRadius: "6px"
   });
   
-  // Charger le logo
-  const baseFolder = "C:/Users/Estheban/Pictures/Flamel Fluid/";
-  const tryFiles = ["Logo.png","Logo.jpg","Logo.jpeg","Logo.svg","Logo.gif"];
+  // Charger le logo - MODIFIÉ : même logique que setupLogo()
+  const tryFiles = ["Logo.png", "Logo.jpg", "Logo.jpeg", "Logo.svg", "Logo.gif", "logo.png", "logo.jpg", "logo.jpeg", "logo.svg", "logo.gif"];
   let tryIndex = 0;
 
-  function tryNextLogo() {
+  function tryNextLogoMonth() {
     if (tryIndex >= tryFiles.length) {
       logoImg.style.display = "none";
       let ph = document.createElement("div");
@@ -3272,7 +3317,8 @@ function createMonthPage() {
       return;
     }
     const file = tryFiles[tryIndex++];
-    const path = "file:///" + encodeURI(baseFolder + file).replace(/^file:\/+/, "");
+    const path = file; // Utiliser le chemin relatif (même dossier)
+    
     const tester = new Image();
     tester.onload = function() {
       logoImg.src = path;
@@ -3281,12 +3327,12 @@ function createMonthPage() {
       if (ph) ph.remove();
     };
     tester.onerror = function() {
-      tryNextLogo();
+      tryNextLogoMonth();
     };
     tester.src = path;
   }
 
-  tryNextLogo();
+  tryNextLogoMonth();
   
   logoContainer.appendChild(logoImg);
   monthPage.appendChild(logoContainer);
@@ -3359,6 +3405,9 @@ function goToMonth() {
 // Initialiser les pages au chargement
 window.addEventListener("load", function() {
   createPages();
+  loadBocaux();
+  initMission(); 
+  loadMission();
 });
 
 // ---------------------------
