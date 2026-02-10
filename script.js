@@ -1,3 +1,44 @@
+// ==========================================
+// BLOC DE SYNCHRONISATION CLOUD (AJOUTÉ)
+// ==========================================
+async function synchroniserCloud() {
+  if (!window.db) return;
+  try {
+    const dataToSave = {
+      historique: historiquePatrimoine,
+      bocauxData: bocaux,
+      missionData: JSON.parse(localStorage.getItem("missionData")) || null,
+      lastSync: Date.now()
+    };
+    await window.fbSetDoc(window.fbDoc(window.db, "donnees", "monPatrimoine"), dataToSave);
+    console.log("✅ Synchronisé sur le Cloud");
+  } catch (e) { console.error("Erreur Cloud:", e); }
+}
+
+async function chargerDepuisCloud() {
+  if (!window.db) { setTimeout(chargerDepuisCloud, 500); return; }
+  try {
+    const docSnap = await window.fbGetDoc(window.fbDoc(window.db, "donnees", "monPatrimoine"));
+    if (docSnap.exists()) {
+      const data = docSnap.data();
+      if (data.historique) {
+        historiquePatrimoine = data.historique;
+        localStorage.setItem("historiquePatrimoine", JSON.stringify(historiquePatrimoine));
+      }
+      if (data.bocauxData) {
+        bocaux = data.bocauxData;
+        localStorage.setItem("bocaux", JSON.stringify(bocaux));
+        // Force le rechargement visuel sans perdre tes fonctions
+        location.reload(); 
+      }
+    }
+  } catch (e) { console.error("Erreur chargement Cloud:", e); }
+}
+// Lancer le chargement au démarrage
+chargerDepuisCloud();
+
+
+
 // ========================================
 // SYSTÈME DE GRAPHIQUE
 // ========================================
@@ -30,6 +71,7 @@ function chargerHistorique() {
 // Sauvegarder l'historique dans localStorage
 function sauvegarderHistorique() {
   localStorage.setItem("historiquePatrimoine", JSON.stringify(historiquePatrimoine));
+  synchroniserCloud();
 }
 
 // Enregistrer un point dans l'historique
@@ -3598,6 +3640,7 @@ function saveBocaux(){
   updateTotalPatrimoineSimule();
   updateObjectifsDynamiques();
   updateSimulationsDynamiques();
+  synchroniserCloud();
 }
 
 // Mettre à jour tous les objectifs dynamiques
@@ -4653,3 +4696,4 @@ window.addEventListener("load", function() {
   initMission(); 
   loadMission();
 });
+
