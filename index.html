@@ -91,13 +91,13 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    // On rend les outils Google disponibles pour ton fichier script.js
+    // On lie Firebase à l'objet window pour que script.js puisse l'utiliser
     window.db = db;
     window.fbSetDoc = setDoc;
     window.fbGetDoc = getDoc;
     window.fbDoc = doc;
 
-    console.log("Firebase est prêt pour la synchro !");
+    console.log("🔥 Firebase initialisé avec succès !");
   </script>
 
   <script src="script.js"></script>
