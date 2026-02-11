@@ -73,6 +73,7 @@ function chargerHistorique() {
 // Sauvegarder l'historique dans localStorage
 function sauvegarderHistorique() {
   localStorage.setItem("historiquePatrimoine", JSON.stringify(historiquePatrimoine));
+  synchroniserCloud();
 }
 
 // Enregistrer un point dans l'historique
@@ -3644,6 +3645,7 @@ function saveBocaux(){
   updateTotalPatrimoineSimule();
   updateObjectifsDynamiques();
   updateSimulationsDynamiques();
+  synchroniserCloud();
 }
 
 // Mettre à jour tous les objectifs dynamiques
