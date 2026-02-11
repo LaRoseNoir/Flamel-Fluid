@@ -520,3 +520,28 @@ body {
   transform: translateY(0);
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
+
+/* RESPONSIVE DESIGN */
+@media (max-width: 768px) {
+  #header {
+    font-size: 12px !important;
+    padding: 5px;
+  }
+  #header b { font-size: 14px; }
+  
+  .bocal {
+    transform: scale(0.8); /* Réduit la taille des bocaux sur mobile */
+    transform-origin: top left;
+  }
+  
+  #graphiqueFenetre {
+    width: 95% !important;
+    height: 90% !important;
+    left: 2.5% !important;
+    top: 5% !important;
+  }
+  
+  #graphiqueStats {
+    grid-template-columns: 1fr 1fr; /* 2 colonnes au lieu de 3 sur mobile */
+  }
+}
