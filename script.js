@@ -1,5 +1,5 @@
 // ==========================================
-// BLOC DE SYNCHRONISATION CLOUD (AJOUTÉ)
+// BLOC DE SYNCHRONISATION CLOUD
 // ==========================================
 async function synchroniserCloud() {
   if (!window.db) return;
@@ -21,22 +21,24 @@ async function chargerDepuisCloud() {
     const docSnap = await window.fbGetDoc(window.fbDoc(window.db, "donnees", "monPatrimoine"));
     if (docSnap.exists()) {
       const data = docSnap.data();
-      if (data.historique) {
-        historiquePatrimoine = data.historique;
-        localStorage.setItem("historiquePatrimoine", JSON.stringify(historiquePatrimoine));
+      let hasChanged = false;
+      if (data.historique && JSON.stringify(data.historique) !== localStorage.getItem("historiquePatrimoine")) {
+        localStorage.setItem("historiquePatrimoine", JSON.stringify(data.historique));
+        hasChanged = true;
       }
-      if (data.bocauxData) {
-        bocaux = data.bocauxData;
-        localStorage.setItem("bocaux", JSON.stringify(bocaux));
-        // Force le rechargement visuel sans perdre tes fonctions
+      if (data.bocauxData && JSON.stringify(data.bocauxData) !== localStorage.getItem("bocaux")) {
+        localStorage.setItem("bocaux", JSON.stringify(data.bocauxData));
+        hasChanged = true;
+      }
+      if (hasChanged) { 
+        console.log("☁️ Données Cloud plus récentes détectées. Mise à jour...");
         location.reload(); 
       }
     }
   } catch (e) { console.error("Erreur chargement Cloud:", e); }
 }
-// Lancer le chargement au démarrage
 chargerDepuisCloud();
-
+// ==========================================
 
 
 // ========================================
@@ -71,7 +73,6 @@ function chargerHistorique() {
 // Sauvegarder l'historique dans localStorage
 function sauvegarderHistorique() {
   localStorage.setItem("historiquePatrimoine", JSON.stringify(historiquePatrimoine));
-  synchroniserCloud();
 }
 
 // Enregistrer un point dans l'historique
@@ -3012,41 +3013,44 @@ let homePage, mainPage, monthPage;
     zIndex: 30000,
     flexDirection: "column",
     alignItems: "center",
+    justifyContent: "center", // Centrer verticalement
     fontFamily: "Arial, sans-serif"
   });
   
-  // En-tête avec logo et nom
-  const headerContainer = document.createElement("div");
-  Object.assign(headerContainer.style, {
+  // Conteneur principal pour logo + titre + slogan
+  const mainContainer = document.createElement("div");
+  Object.assign(mainContainer.style, {
     display: "flex",
-    flexDirection: "column",
+    flexDirection: "row", // Logo à gauche, texte à droite
     alignItems: "center",
     justifyContent: "center",
-    marginTop: "60px",
-    marginBottom: "40px",
-    width: "100%"
+    marginBottom: "60px",
+    width: "100%",
+    maxWidth: "700px",
+    padding: "0 20px"
   });
   
-  // Logo - MODIFIÉ : même logique que setupLogo()
+  // Logo
   const logoContainer = document.createElement("div");
   Object.assign(logoContainer.style, {
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: "20px",
-    width: "120px",
-    height: "120px",
+    width: "140px",
+    height: "140px",
     borderRadius: "20px",
     backgroundColor: "white",
-    boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
-    overflow: "hidden"
+    boxShadow: "0 4px 16px rgba(0,0,0,0.1)",
+    overflow: "hidden",
+    marginRight: "40px",
+    flexShrink: "0"
   });
   
   const logoImg = document.createElement("img");
   logoImg.alt = "Logo Flamel Fluid";
   Object.assign(logoImg.style, {
-    maxWidth: "80px",
-    maxHeight: "80px",
+    maxWidth: "100px",
+    maxHeight: "100px",
     display: "block"
   });
   
@@ -3061,7 +3065,7 @@ let homePage, mainPage, monthPage;
       const placeholder = document.createElement("div");
       placeholder.innerHTML = "💧";
       Object.assign(placeholder.style, {
-        fontSize: "48px",
+        fontSize: "64px",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
@@ -3092,32 +3096,45 @@ let homePage, mainPage, monthPage;
   
   logoContainer.appendChild(logoImg);
   
+  // Conteneur pour le titre et le slogan (à droite du logo)
+  const textContainer = document.createElement("div");
+  Object.assign(textContainer.style, {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "flex-start",
+    justifyContent: "center"
+  });
+  
   // Nom de l'application
   const appName = document.createElement("h1");
   appName.textContent = "Flamel Fluid";
   Object.assign(appName.style, {
-    fontSize: "42px",
+    fontSize: "48px",
     color: "#333",
     fontWeight: "bold",
-    margin: "0 0 10px 0",
-    textAlign: "center",
+    margin: "0 0 12px 0",
+    textAlign: "left",
     letterSpacing: "1px"
   });
   
+  // Nouveau slogan plus percutant
   const appSubtitle = document.createElement("p");
-  appSubtitle.textContent = "Votre patrimoine, visualisé simplement";
+  appSubtitle.textContent = "Fluidifier votre patrimoine";
   Object.assign(appSubtitle.style, {
-    fontSize: "18px",
+    fontSize: "20px",
     color: "#666",
-    margin: "0 0 30px 0",
-    textAlign: "center",
+    margin: "0",
+    textAlign: "left",
     maxWidth: "400px",
-    lineHeight: "1.5"
+    lineHeight: "1.4",
+    fontStyle: "italic"
   });
   
-  headerContainer.appendChild(logoContainer);
-  headerContainer.appendChild(appName);
-  headerContainer.appendChild(appSubtitle);
+  textContainer.appendChild(appName);
+  textContainer.appendChild(appSubtitle);
+  
+  mainContainer.appendChild(logoContainer);
+  mainContainer.appendChild(textContainer);
   
   // Zone des boutons en bas
   const buttonsContainer = document.createElement("div");
@@ -3127,8 +3144,6 @@ let homePage, mainPage, monthPage;
     alignItems: "center",
     justifyContent: "center",
     gap: "20px",
-    marginTop: "auto",
-    marginBottom: "80px",
     width: "100%",
     maxWidth: "320px"
   });
@@ -3138,8 +3153,8 @@ let homePage, mainPage, monthPage;
   mainButton.textContent = "Main";
   mainButton.className = "home-button main-button";
   Object.assign(mainButton.style, {
-    padding: "16px 32px",
-    fontSize: "20px",
+    padding: "18px 36px",
+    fontSize: "22px",
     backgroundColor: "black",
     color: "white",
     border: "none",
@@ -3178,8 +3193,8 @@ let homePage, mainPage, monthPage;
   monthButton.textContent = "Month";
   monthButton.className = "home-button month-button";
   Object.assign(monthButton.style, {
-    padding: "16px 32px",
-    fontSize: "20px",
+    padding: "18px 36px",
+    fontSize: "22px",
     backgroundColor: "black",
     color: "white",
     border: "none",
@@ -3213,13 +3228,13 @@ let homePage, mainPage, monthPage;
     monthButton.style.boxShadow = "0 2px 4px rgba(0,0,0,0.2)";
   });
   
-  // Bouton Matrix - NOUVEAU
+  // Bouton Matrix
   const matrixButton = document.createElement("button");
   matrixButton.textContent = "Matrix";
   matrixButton.className = "home-button matrix-button";
   Object.assign(matrixButton.style, {
-    padding: "16px 32px",
-    fontSize: "20px",
+    padding: "18px 36px",
+    fontSize: "22px",
     backgroundColor: "black",
     color: "white",
     border: "none",
@@ -3254,25 +3269,14 @@ let homePage, mainPage, monthPage;
     matrixButton.style.boxShadow = "0 2px 4px rgba(0,0,0,0.2)";
   });
   
-  // Indication d'information mise à jour
-  const infoText = document.createElement("p");
-  infoText.textContent = "Sélectionnez une interface ou accédez à la Matrix";
-  Object.assign(infoText.style, {
-    fontSize: "14px",
-    color: "#999",
-    marginTop: "10px",
-    textAlign: "center",
-    fontStyle: "italic"
-  });
-  
-  // Assembler les boutons
+  // Assembler les boutons (SUPPRIMER la phrase d'information)
   buttonsContainer.appendChild(mainButton);
   buttonsContainer.appendChild(monthButton);
-  buttonsContainer.appendChild(matrixButton); // Nouveau bouton
-  buttonsContainer.appendChild(infoText);
+  buttonsContainer.appendChild(matrixButton);
+  // Supprimé: buttonsContainer.appendChild(infoText);
   
   // Ajouter tout au Home
-  homePage.appendChild(headerContainer);
+  homePage.appendChild(mainContainer);
   homePage.appendChild(buttonsContainer);
   document.body.appendChild(homePage);
   
@@ -3640,7 +3644,6 @@ function saveBocaux(){
   updateTotalPatrimoineSimule();
   updateObjectifsDynamiques();
   updateSimulationsDynamiques();
-  synchroniserCloud();
 }
 
 // Mettre à jour tous les objectifs dynamiques
@@ -4696,4 +4699,3 @@ window.addEventListener("load", function() {
   initMission(); 
   loadMission();
 });
-
