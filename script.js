@@ -3,6 +3,7 @@
 // ==========================================
 async function synchroniserCloud() {
   if (!window.db) return;
+  enTrainDeSynchroniser = true; // On ferme le verrou
   try {
     const dataToSave = {
       historique: historiquePatrimoine,
@@ -13,29 +14,62 @@ async function synchroniserCloud() {
     await window.fbSetDoc(window.fbDoc(window.db, "donnees", "monPatrimoine"), dataToSave);
     console.log("✅ Synchronisé sur le Cloud");
   } catch (e) { console.error("Erreur Cloud:", e); }
+  
+  // On attend 2 secondes avant de réouvrir le verrou pour laisser le temps au réseau
+  setTimeout(() => { enTrainDeSynchroniser = false; }, 2000);
 }
 
+let enTrainDeSynchroniser = false; // Le verrou
+
 async function chargerDepuisCloud() {
-  if (!window.db) { setTimeout(chargerDepuisCloud, 500); return; }
+  if (!window.db || enTrainDeSynchroniser) { 
+    setTimeout(chargerDepuisCloud, 1000); 
+    return; 
+  }
+  
   try {
     const docSnap = await window.fbGetDoc(window.fbDoc(window.db, "donnees", "monPatrimoine"));
     if (docSnap.exists()) {
       const data = docSnap.data();
-      let hasChanged = false;
-      if (data.historique && JSON.stringify(data.historique) !== localStorage.getItem("historiquePatrimoine")) {
-        localStorage.setItem("historiquePatrimoine", JSON.stringify(data.historique));
-        hasChanged = true;
-      }
-      if (data.bocauxData && JSON.stringify(data.bocauxData) !== localStorage.getItem("bocaux")) {
-        localStorage.setItem("bocaux", JSON.stringify(data.bocauxData));
-        hasChanged = true;
-      }
-      if (hasChanged) { 
-        console.log("☁️ Données Cloud plus récentes détectées. Mise à jour...");
-        location.reload(); 
+      
+      // Comparaison stricte pour éviter les boucles
+      const cloudDataStr = JSON.stringify(data.bocauxData);
+      const localDataStr = localStorage.getItem("bocaux");
+
+      if (cloudDataStr !== localDataStr) {
+        console.log("☁️ Mise à jour depuis le Cloud détectée...");
+        
+        // On met à jour la mémoire locale
+        bocaux = data.bocauxData;
+        localStorage.setItem("bocaux", cloudDataStr);
+        
+        if (data.historique) {
+          historiquePatrimoine = data.historique;
+          localStorage.setItem("historiquePatrimoine", JSON.stringify(data.historique));
+        }
+
+        // MISE À JOUR VISUELLE SANS RECHARGER LA PAGE
+        // On vide le land
+        const land = document.getElementById("land");
+        land.innerHTML = ""; 
+        // On remet la grille
+        if (gridOverlay) land.appendChild(gridOverlay);
+        
+        // On recrée les bocaux
+        bocaux.forEach(item => {
+          creerBocal(item.nom, item.volume, item.capital, item.objectif, item.simulation, item.left, item.top, item.zIndex, item.anchored, item.id, item.investment, item.interest, true, item.categorie, item.composition);
+        });
+
+        updateTotalPatrimoine();
+        updateTotalPatrimoineVise();
+        updateTotalPatrimoineSimule();
+        if (typeof dessinerGraphique === "function") dessinerGraphique();
       }
     }
   } catch (e) { console.error("Erreur chargement Cloud:", e); }
+  
+  // On vérifie toutes les 5 secondes seulement pour économiser la batterie et éviter les boucles
+  setTimeout(chargerDepuisCloud, 5000); 
 }
 chargerDepuisCloud();
 // ==========================================
