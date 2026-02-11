@@ -1,9 +1,10 @@
 // ==========================================
-// BLOC DE SYNCHRONISATION CLOUD (VERSION FINALE)
+// BLOC DE SYNCHRONISATION CLOUD (TEMPS RÉEL & RATIOS)
 // ==========================================
 let enTrainDeSynchroniser = false;
 let derniereSynchroLocale = 0;
 
+// ENVOI : On pousse les données avec un Timestamp
 async function synchroniserCloud() {
   if (!window.db) return;
   enTrainDeSynchroniser = true;
@@ -13,55 +14,69 @@ async function synchroniserCloud() {
   try {
     const dataToSave = {
       historique: historiquePatrimoine,
-      bocauxData: bocaux,
-      missionData: JSON.parse(localStorage.getItem("missionData")) || null,
+      bocauxData: bocaux, // Les ratios xRatio et yRatio sont déjà dans les objets
       updatedAt: maintenant
     };
     await window.fbSetDoc(window.fbDoc(window.db, "donnees", "monPatrimoine"), dataToSave);
-    console.log("✅ Envoyé au Cloud : " + new Date(maintenant).toLocaleTimeString());
+    console.log("⚡ Envoyé au Cloud (Instant)");
   } catch (e) { console.error("Erreur Cloud:", e); }
   
-  setTimeout(() => { enTrainDeSynchroniser = false; }, 3000);
+  // Verrou court pour permettre une réactivité maximale
+  setTimeout(() => { enTrainDeSynchroniser = false; }, 1000);
 }
 
-async function chargerDepuisCloud() {
-  if (!window.db || enTrainDeSynchroniser) { 
-    setTimeout(chargerDepuisCloud, 8000); 
+// RÉCEPTION : Écoute en temps réel (onSnapshot)
+function activerEcouteRealTime() {
+  if (!window.fbOnSnapshot) { 
+    setTimeout(activerEcouteRealTime, 500); 
     return; 
   }
-  try {
-    const docSnap = await window.fbGetDoc(window.fbDoc(window.db, "donnees", "monPatrimoine"));
-    if (docSnap.exists()) {
-      const data = docSnap.data();
+
+  window.fbOnSnapshot(window.fbDoc(window.db, "donnees", "monPatrimoine"), (doc) => {
+    // Si c'est nous qui venons d'écrire, on ignore la mise à jour pour éviter les sauts
+    if (enTrainDeSynchroniser) return;
+
+    if (doc.exists()) {
+      const data = doc.data();
       const updatedAtCloud = data.updatedAt || 0;
 
+      // On ne met à jour que si les données Cloud sont plus récentes que notre dernier mouvement
       if (updatedAtCloud > derniereSynchroLocale) {
-        console.log("☁️ Mise à jour reçue du Cloud...");
+        console.log("☁️ Mise à jour reçue : Proportionnalité appliquée");
+        
         bocaux = data.bocauxData || [];
         localStorage.setItem("bocaux", JSON.stringify(bocaux));
         historiquePatrimoine = data.historique || [];
         localStorage.setItem("historiquePatrimoine", JSON.stringify(historiquePatrimoine));
 
-        // Rendu visuel immédiat sans rechargement
+        // Redessiner tout le terrain
         const land = document.getElementById("land");
-        land.innerHTML = "";
-        if (typeof gridOverlay !== 'undefined') land.appendChild(gridOverlay);
-        
-        bocaux.forEach(item => {
-          creerBocal(item.nom, item.volume, item.capital, item.objectif, item.simulation, item.left, item.top, item.zIndex, item.anchored, item.id, item.investment, item.interest, true, item.categorie, item.composition);
-        });
+        if (land) {
+          land.innerHTML = "";
+          if (typeof gridOverlay !== 'undefined') land.appendChild(gridOverlay);
+          
+          bocaux.forEach(item => {
+            // On appelle creerBocal avec les ratios xRatio et yRatio
+            creerBocal(item.nom, item.volume, item.capital, item.objectif, item.simulation, 
+                       item.left, item.top, item.zIndex, item.anchored, item.id, 
+                       item.investment, item.interest, true, item.categorie, item.composition,
+                       item.xRatio, item.yRatio);
+          });
+        }
 
         updateTotalPatrimoine();
         updateTotalPatrimoineVise();
         updateTotalPatrimoineSimule();
         if (typeof dessinerGraphique === "function") dessinerGraphique();
+        
         derniereSynchroLocale = updatedAtCloud;
       }
     }
-  } catch (e) { console.error("Erreur chargement:", e); }
-  setTimeout(chargerDepuisCloud, 8000);
+  });
 }
-setTimeout(chargerDepuisCloud, 2000);
+
+// Lancement de l'écoute instantanée
+activerEcouteRealTime();
 
 // ========================================
 // LOGIQUE DE SAUVEGARDE ET CALCULS
@@ -4137,552 +4152,154 @@ function updateBocalDisplay(bocal, save = true) {
 // create bocal function (with drag+snap using grid overlay)
 // accepts optional id, investment/interest, fromLoad flag, categorie
 // ---------------------------
-function creerBocal(nom, volume, capital, objectif, simulation, left, top, zIndex, anchored, id, investment, interest, fromLoad, categorie){
-  // Set default values
+function creerBocal(nom, volume, capital, objectif, simulation, left, top, zIndex, anchored, id, investment, interest, fromLoad, categorie, composition, xRatio, yRatio) {
+  // --- INITIALISATION ---
   capital = formatNumber(capital) || 0;
   objectif = formatNumber(objectif) || 0;
   simulation = formatNumber(simulation) || 0;
-  left = left || 100;
-  top = top || 100;
   investment = formatNumber(investment) || 0;
   interest = formatNumber(interest) || 0;
   categorie = categorie || "Courant";
   
   const initCapital = formatNumber(capital) || 0;
   const taille = Math.sqrt(Math.max(initCapital, 0) + 1000);
-
   currentZIndex++;
-  zIndex = zIndex !== null ? Math.max(currentZIndex,zIndex) : currentZIndex;
+  zIndex = zIndex !== null ? Math.max(currentZIndex, zIndex) : currentZIndex;
   currentZIndex = zIndex;
 
   const bocalWidth = taille, lineHeight = 18;
   const bocal = document.createElement("div");
-  
-  Object.assign(bocal.style,{
-    width: bocalWidth + "px",
-    height: bocalWidth + "px",
-    borderLeft: "4px solid black",
-    borderRight: "4px solid black",
-    borderBottom: "4px solid black",
-    borderTop: "none",
-    position: "absolute",
-    top: top + "px",
-    left: left + "px",
-    borderRadius: "6px",
-    cursor: "grab",
-    backgroundColor: "rgba(255,255,255,0.9)",
-    boxShadow: anchored ? "none" : "3px 3px 10px rgba(0,0,0,0.4)",
-    zIndex: zIndex,
-    overflow: "hidden"
+  bocal.className = "bocal";
+
+  // --- POSITION DYNAMIQUE ---
+  const landRect = land.getBoundingClientRect();
+  let finalLeft = left || 100;
+  let finalTop = top || 100;
+
+  if (xRatio !== undefined && xRatio !== null) {
+    finalLeft = xRatio * landRect.width;
+    finalTop = yRatio * landRect.height;
+  }
+
+  Object.assign(bocal.style, {
+    width: bocalWidth + "px", height: bocalWidth + "px", borderLeft: "4px solid black",
+    borderRight: "4px solid black", borderBottom: "4px solid black", borderTop: "none",
+    position: "absolute", top: finalTop + "px", left: finalLeft + "px",
+    borderRadius: "6px", cursor: "grab", backgroundColor: "rgba(255,255,255,0.9)",
+    boxShadow: anchored ? "none" : "3px 3px 10px rgba(0,0,0,0.4)", zIndex: zIndex, overflow: "hidden"
   });
   land.appendChild(bocal);
-  bocal._anchored = anchored;
-  bocal._investment = formatNumber(investment) || 0;
-  bocal._interest   = formatNumber(interest)   || 0;
-  bocal._popup = null;
-  bocal._investmentFill = null;
-  bocal._interestFill = null;
-  bocal._id = id || (Date.now().toString() + Math.random().toFixed(3).slice(2));
 
-  // create fills (pas d'intérêts pour Fuite)
+  bocal._anchored = anchored; bocal._id = id || (Date.now().toString() + Math.random().toFixed(3).slice(2));
+  bocal._investment = investment; bocal._interest = interest;
+
+  // --- FILLS ET LABELS ---
   const fillInv = document.createElement("div");
-  Object.assign(fillInv.style, {
-    position: "absolute",
-    bottom: "0",
-    left: "0",
-    width: "100%",
-    height: "0%",
-    backgroundColor: "#007BFF"
-  });
+  Object.assign(fillInv.style, { position: "absolute", bottom: "0", left: "0", width: "100%", height: "0%", backgroundColor: "#007BFF" });
   bocal.appendChild(fillInv);
   bocal._investmentFill = fillInv;
 
-  // Pas de fill d'intérêts pour Fuite
   if (categorie !== "Fuite") {
     const fillIntr = document.createElement("div");
-    Object.assign(fillIntr.style, {
-      position: "absolute",
-      left: "0",
-      width: "100%",
-      height: "0%",
-      backgroundColor: "#D79A10"
-    });
+    Object.assign(fillIntr.style, { position: "absolute", left: "0", width: "100%", height: "0%", backgroundColor: "#D79A10" });
     bocal.appendChild(fillIntr);
     bocal._interestFill = fillIntr;
-  } else {
-    bocal._interestFill = null;
   }
 
-  // lines to show below (nom, plafond if >0 OU montant+période pour Fuite, capital, objectif, simulation)
-  const lines = [{ text: nom, color: "#000", role: "nom" }];
-  
-  // Pour Fuite : afficher montant | période en gris à la place du plafond
-  if (categorie === "Fuite") {
-    // Récupérer depuis bocaux si c'est un chargement
-    if (fromLoad) {
-      const idx = bocaux.findIndex(function(b) { return b.id === bocal._id; });
-      const montant = (idx !== -1 && bocaux[idx].montantFuite) ? bocaux[idx].montantFuite : 0;
-      const periode = (idx !== -1 && bocaux[idx].periodeFuite) ? bocaux[idx].periodeFuite : "Mensuel";
-      lines.push({ text: formatMoney(montant) + " | " + periode, color: "#666", role: "montant-periode" });
-    } else {
-      lines.push({ text: formatMoney(0) + " | Mensuel", color: "#666", role: "montant-periode" });
-    }
-  } else if (volume > 0) {
-    // Pour les autres : plafond classique
-    lines.push({ text: formatMoney(volume), color: "#666", role: "plafond" });
-  }
-  
-  lines.push({ text: formatMoney(capital), color: "#2ecc71", role: "capital" });
-  lines.push({ text: formatMoney(objectif), color: "#e74c3c", role: "objectif" });
-  lines.push({ text: formatMoney(simulation), color: "#FF8C00", role: "simulation" }); // MODIFIÉ: Changé en orange foncé #FF8C00
+  const lines = [
+    { text: nom, color: "#000", role: "nom" },
+    { text: formatMoney(capital), color: "#2ecc71", role: "capital" },
+    { text: formatMoney(objectif), color: "#e74c3c", role: "objectif" }
+  ];
 
-  const divs = lines.map(function(ln,i){
+  const divs = lines.map((ln, i) => {
     const d = document.createElement("div");
     d.textContent = ln.text;
-    d.dataset.role = ln.role;
-    Object.assign(d.style,{
-      position: "absolute",
-      top: (top + bocalWidth + 5 + i*lineHeight) + "px",
-      left: (left + bocalWidth/2) + "px",
-      transform: "translateX(-50%)",
-      color: ln.color,
-      fontSize: "14px",
-      whiteSpace: "nowrap",
-      zIndex: zIndex
+    Object.assign(d.style, {
+      position: "absolute", top: (finalTop + bocalWidth + 5 + i * lineHeight) + "px",
+      left: (finalLeft + bocalWidth / 2) + "px", transform: "translateX(-50%)",
+      color: ln.color, fontSize: "14px", whiteSpace: "nowrap", zIndex: zIndex
     });
     land.appendChild(d);
     return d;
   });
 
-  // popup handlers (mouseenter/mouseleave); popup follows bocal because we update in mousemove/drag
-  bocal.addEventListener("mouseenter", function() {
-    if (bocal._popup) bocal._popup.remove();
-    const popup = document.createElement("div");
-    Object.assign(popup.style, {
-      position: "absolute",
-      backgroundColor: "#fff",
-      border: "1px solid #ccc",
-      borderRadius: "4px",
-      padding: "6px",
-      boxShadow: "2px 2px 8px rgba(0,0,0,0.2)",
-      fontSize: "14px",
-      zIndex: currentZIndex + 1
-    });
-    
-    // Déterminer les labels selon la catégorie
-    const idx = bocaux.findIndex(function(b) { return b.id === bocal._id; });
-    const cat = (idx !== -1 && bocaux[idx].categorie) ? bocaux[idx].categorie : categorie;
-    
-    // Pour Fuite, afficher uniquement l'investissement
-    if (cat === "Fuite") {
-      const inv = document.createElement("div");
-      inv.className = "pv-inv";
-      inv.textContent = "Investissement: " + formatMoney(bocal._investment||0);
-      inv.style.color = "#007BFF";
-      popup.appendChild(inv);
-    } else if (cat === "Goutte") {
-      // Pour Goutte, calculer depuis la composition
-      let totalBillets = 0;
-      let totalPieces = 0;
-      
-      if (idx !== -1 && bocaux[idx].composition) {
-        Object.keys(bocaux[idx].composition).forEach(function(label) {
-          const qty = bocaux[idx].composition[label] || 0;
-          const valInfo = monnaieValues.flatMap(function(g) { return g.values; }).find(function(v) { return v.label === label; });
-          if (valInfo) {
-            const montant = qty * valInfo.value;
-            if (label === "5€" || label === "10€" || label === "20€" || label === "50€") {
-              totalBillets += montant;
-            } else {
-              totalPieces += montant;
-            }
-          }
-        });
+  // --- GESTION DES CLICS (TOUTES FONCTIONS) ---
+  let clickCount = 0;
+  bocal.addEventListener("click", (e) => {
+    e.stopPropagation();
+    clickCount++;
+    setTimeout(() => {
+      if (clickCount === 1) { // SIMPLE CLIC : MENU
+        const r = bocal.getBoundingClientRect(), lr = land.getBoundingClientRect();
+        menuContextuel.style.top = (r.top - lr.top) + "px";
+        menuContextuel.style.left = (r.right - lr.left + 10) + "px";
+        menuContextuel.style.display = "block";
+        menuContextuel._targetBocal = bocal;
+        btnAncrer.textContent = bocal._anchored ? "Désancrer" : "Ancrer";
+      } else if (clickCount === 2) { // DOUBLE CLIC : FUITE
+        const idx = bocaux.findIndex(b => b.id === bocal._id);
+        if (idx !== -1 && bocaux[idx].categorie === "Fuite") {
+          bocaux[idx].capital = Math.max(0, bocaux[idx].capital - (bocaux[idx].montantFuite || 0));
+          bocaux[idx].investment = bocaux[idx].capital;
+          updateBocalDisplay(bocal);
+          saveBocaux();
+        }
+      } else if (clickCount >= 5) { // 5 CLICS : SUPPRIMER
+        supprimerBocal(bocal);
       }
-      
-      const inv = document.createElement("div");
-      inv.className = "pv-inv";
-      inv.textContent = "Billets: " + formatMoney(totalBillets);
-      inv.style.color = "#007BFF";
-
-      const intr = document.createElement("div");
-      intr.className = "pv-intr";
-      intr.textContent = "Pièces: " + formatMoney(totalPieces);
-      intr.style.color = "#D79A10";
-
-      popup.append(inv, intr);
-    } else {
-      // Pour les autres catégories
-      const inv = document.createElement("div");
-      inv.className = "pv-inv";
-      inv.textContent = "Investissement: " + formatMoney(bocal._investment||0);
-      inv.style.color = "#007BFF";
-
-      const intr = document.createElement("div");
-      intr.className = "pv-intr";
-      intr.textContent = "Intérêts: " + formatMoney(bocal._interest||0);
-      intr.style.color = "#D79A10";
-
-      popup.append(inv, intr);
-    }
-
-    land.appendChild(popup);
-    bocal._popup = popup;
-    const rect = bocal.getBoundingClientRect();
-    popup.style.top  = (rect.top + window.pageYOffset - 50) + "px";
-    popup.style.left = (rect.right + window.pageXOffset + 10) + "px";
+      clickCount = 0;
+    }, 250);
   });
 
-  bocal.addEventListener("mousemove", function() {
-    if (!bocal._popup) return;
-    const rect = bocal.getBoundingClientRect();
-    bocal._popup.style.top  = (rect.top + window.pageYOffset - 50) + "px";
-    bocal._popup.style.left = (rect.right + window.pageXOffset + 10) + "px";
-  });
-
-  bocal.addEventListener("mouseleave", function() {
-    if (bocal._popup) bocal._popup.remove();
-    bocal._popup = null;
-  });
-
-  // ---------------------------
-  // Drag & snap logic (adds listeners on mousedown, removes them on mouseup)
-  // ---------------------------
-  let isDragging = false;
-  let startX = 0, startY = 0, ox = 0, oy = 0, moved = false;
-  let docMoveHandler = null, docUpHandler = null;
-
-  bocal.addEventListener("mousedown", function(e) {
+  // --- DRAG AVEC RATIOS ---
+  let isDragging = false, ox = 0, oy = 0;
+  bocal.addEventListener("mousedown", (e) => {
     if (bocal._anchored) return;
-    e.preventDefault();
     isDragging = true;
-    moved = false;
-    startX = e.clientX; startY = e.clientY;
-    ox = e.clientX - bocal.offsetLeft;
-    oy = e.clientY - bocal.offsetTop;
-    bocal.style.cursor = "grabbing";
-
-    // bring to front
-    currentZIndex++;
-    bocal.style.zIndex = currentZIndex;
-    divs.forEach(function(d){ d.style.zIndex = currentZIndex; });
-    
-    // Update emoji z-index
-    const emojiElDrag = document.querySelector('[data-emoji-for="' + bocal._id + '"]');
-    if (emojiElDrag) {
-      emojiElDrag.style.zIndex = currentZIndex + 1;
-    }
-
-    // show grid
+    ox = e.clientX - bocal.offsetLeft; oy = e.clientY - bocal.offsetTop;
     gridOverlay.style.display = "block";
 
-    // mousemove handler
-    docMoveHandler = function(ev){
+    const onMouseMove = (ev) => {
       if (!isDragging) return;
-      const dx = ev.clientX - startX;
-      const dy = ev.clientY - startY;
-      if (Math.abs(dx) > 3 || Math.abs(dy) > 3) moved = true;
-
-      // raw left/top (top-left of element)
-      let nl = ev.clientX - ox;
-      let nt = ev.clientY - oy;
-
-      // Récupérer les limites du land
-      const landBounds = getLandBounds();
-      const bocalWidth = parseFloat(bocal.style.width) || bocal.offsetWidth;
-      const bocalHeight = parseFloat(bocal.style.height) || bocal.offsetHeight;
-
-      // Empêcher de sortir du land
-      // Empêcher de sortir à gauche
-      if (nl < 0) nl = 0;
-      // Empêcher de sortir en haut
-      if (nt < 0) nt = 0;
-      // Empêcher de sortir à droite
-      if (nl + bocalWidth > landBounds.width) nl = landBounds.width - bocalWidth;
-      // Empêcher de sortir en bas
-      if (nt + bocalHeight > landBounds.height) nt = landBounds.height - bocalHeight;
-
-      // center coordinates (viewport)
-      const centerX = nl + bocalWidth / 2;
-      const centerY = nt + bocalHeight / 2;
-
-      // snap center to grid
-      const snapCenterX = Math.round(centerX / gridSpacing) * gridSpacing;
-      const snapCenterY = Math.round(centerY / gridSpacing) * gridSpacing;
-
-      // compute snapped left/top for element so center aligns
-      let nlSnapped = snapCenterX - bocalWidth / 2;
-      let ntSnapped = snapCenterY - bocalHeight / 2;
-
-      // Re-vérifier les limites après snapping
-      if (nlSnapped < 0) nlSnapped = 0;
-      if (ntSnapped < 0) ntSnapped = 0;
-      if (nlSnapped + bocalWidth > landBounds.width) nlSnapped = landBounds.width - bocalWidth;
-      if (ntSnapped + bocalHeight > landBounds.height) ntSnapped = landBounds.height - bocalHeight;
-
-      bocal.style.left = nlSnapped + "px";
-      bocal.style.top  = ntSnapped + "px";
-
-      // reposition texts
-      divs.forEach(function(d,i){
-        d.style.left = (nlSnapped + bocalWidth/2) + "px";
-        d.style.top  = (ntSnapped + bocalHeight + 5 + i*lineHeight) + "px";
+      const lb = land.getBoundingClientRect();
+      let nl = Math.max(0, Math.min(ev.clientX - ox, lb.width - bocalWidth));
+      let nt = Math.max(0, Math.min(ev.clientY - oy, lb.height - bocalWidth));
+      // Snap
+      nl = Math.round((nl + bocalWidth/2) / 20) * 20 - bocalWidth/2;
+      nt = Math.round((nt + bocalWidth/2) / 20) * 20 - bocalWidth/2;
+      bocal.style.left = nl + "px"; bocal.style.top = nt + "px";
+      divs.forEach((d, i) => {
+        d.style.left = (nl + bocalWidth/2) + "px";
+        d.style.top = (nt + bocalWidth + 5 + i * lineHeight) + "px";
       });
-
-      // reposition emoji
-      const emojiEl = document.querySelector('[data-emoji-for="' + bocal._id + '"]');
-      if (emojiEl) {
-        const borderSize = 4;
-        const totalSize = bocalWidth + (borderSize * 2);
-        const quartSize = totalSize * 0.25;
-        emojiEl.style.left = (nlSnapped + bocalWidth + borderSize - quartSize) + "px";
-        emojiEl.style.top = (ntSnapped + bocalHeight + borderSize - quartSize) + "px";
-      }
-
-      // popup follow + refresh
-      if (bocal._popup) {
-        const rect = bocal.getBoundingClientRect();
-        bocal._popup.style.top  = (rect.top + window.pageYOffset - 50) + "px";
-        bocal._popup.style.left = (rect.right + window.pageXOffset + 10) + "px";
-        
-        const idx = bocaux.findIndex(function(b) { return b.id === bocal._id; });
-        const cat = (idx !== -1 && bocaux[idx].categorie) ? bocaux[idx].categorie : "Courant";
-        
-        // Pour Fuite, uniquement investissement
-        if (cat === "Fuite") {
-          const inv = bocal._popup.querySelector(".pv-inv");
-          if (inv) inv.textContent = "Investissement: " + formatMoney(bocal._investment||0);
-          const intr = bocal._popup.querySelector(".pv-intr");
-          if (intr) intr.remove();
-        } else if (cat === "Goutte") {
-          // Pour Goutte, calculer depuis la composition
-          let totalBillets = 0;
-          let totalPieces = 0;
-          
-          if (idx !== -1 && bocaux[idx].composition) {
-            Object.keys(bocaux[idx].composition).forEach(function(label) {
-              const qty = bocaux[idx].composition[label] || 0;
-              const valInfo = monnaieValues.flatMap(function(g) { return g.values; }).find(function(v) { return v.label === label; });
-              if (valInfo) {
-                const montant = qty * valInfo.value;
-                if (label === "5€" || label === "10€" || label === "20€" || label === "50€") {
-                  totalBillets += montant;
-                } else {
-                  totalPieces += montant;
-                }
-              }
-            });
-          }
-          
-          const inv = bocal._popup.querySelector(".pv-inv");
-          const intr = bocal._popup.querySelector(".pv-intr");
-          if (inv) inv.textContent = "Billets: " + formatMoney(totalBillets);
-          if (intr) intr.textContent = "Pièces: " + formatMoney(totalPieces);
-        } else {
-          const inv = bocal._popup.querySelector(".pv-inv");
-          const intr = bocal._popup.querySelector(".pv-intr");
-          if (inv) inv.textContent = "Investissement: " + formatMoney(bocal._investment||0);
-          if (intr) intr.textContent = "Intérêts: " + formatMoney(bocal._interest||0);
-        }
-      }
     };
 
-    // mouseup handler
-    docUpHandler = function(){
-      if (!isDragging) return;
-      isDragging = false;
-      bocal.style.cursor = "grab";
-      gridOverlay.style.display = "none";
-
-      // save position
-      const idx = bocaux.findIndex(function(b) { return b.id === bocal._id; });
+    const onMouseUp = () => {
+      isDragging = false; gridOverlay.style.display = "none";
+      const lb = land.getBoundingClientRect();
+      const idx = bocaux.findIndex(b => b.id === bocal._id);
       if (idx !== -1) {
-        bocaux[idx].left = parseFloat(bocal.style.left);
-        bocaux[idx].top  = parseFloat(bocal.style.top);
-        bocaux[idx].zIndex = currentZIndex;
+        bocaux[idx].xRatio = parseFloat(bocal.style.left) / lb.width;
+        bocaux[idx].yRatio = parseFloat(bocal.style.top) / lb.height;
         saveBocaux();
       }
-
-      // remove handlers
-      document.removeEventListener("mousemove", docMoveHandler);
-      document.removeEventListener("mouseup", docUpHandler);
-      docMoveHandler = null;
-      docUpHandler = null;
+      document.removeEventListener("mousemove", onMouseMove); document.removeEventListener("mouseup", onMouseUp);
     };
-
-    document.addEventListener("mousemove", docMoveHandler);
-    document.addEventListener("mouseup", docUpHandler);
+    document.addEventListener("mousemove", onMouseMove); document.addEventListener("mouseup", onMouseUp);
   });
-
-  // ---------------------------
-  // finalize id & storage
-  // ---------------------------
-  if (id) {
-    bocal._id = id;
-  } else {
-    bocal._id = Date.now().toString() + Math.random().toFixed(3).slice(2);
-  }
-  bocalMap.set(bocal._id, bocal);
 
   if (!fromLoad) {
+    const lb = land.getBoundingClientRect();
     bocaux.push({
-      id: bocal._id,
-      nom: nom,
-      volume: formatNumber(volume),
-      capital: formatNumber(capital) || 0,
-      objectif: formatNumber(objectif) || 0,
-      simulation: formatNumber(simulation) || 0,
-      investment: formatNumber(bocal._investment) || 0,
-      interest: formatNumber(bocal._interest) || 0,
-      left: left,
-      top: top,
-      zIndex: zIndex,
-      anchored: !!anchored,
-      categorie: categorie || "Courant",
-      composition: {},
-      montantFuite: 0,
-      periodeFuite: "Mensuel",
-      objectifDynamique: false,
-      objectifDynamiqueConfig: [],
-      simulationDynamique: false,
-      simulationDynamiqueConfig: []
+      id: bocal._id, nom, volume, capital, objectif, simulation, investment, interest,
+      xRatio: finalLeft / lb.width, yRatio: finalTop / lb.height,
+      zIndex, anchored: !!anchored, categorie, composition: composition || {}
     });
     saveBocaux();
-  } else {
-    bocal._investment = formatNumber(investment) || 0;
-    bocal._interest   = formatNumber(interest) || 0;
   }
-
-  // menu contextuel on click (only if not moved)
-  // Système de détection des clics multiples
-  let clickedMoved = false;
-  let clickCount = 0;
-  let clickResetTimeout = null;
-
-  bocal.addEventListener("click", function(e){
-    if (clickedMoved) { clickedMoved = false; return; }
-    e.stopPropagation();
-    
-    clickCount++;
-    
-    // Clear le timeout de reset
-    if (clickResetTimeout) {
-      clearTimeout(clickResetTimeout);
-    }
-    
-    // Reset après 500ms d'inactivité
-    clickResetTimeout = setTimeout(function() {
-      clickCount = 0;
-    }, 500);
-    
-    // 5 clics = suppression immédiate
-    if (clickCount >= 5) {
-      supprimerBocal(bocal);
-      menuContextuel.style.display = "none";
-      menuContextuel._targetBocal = null;
-      clickCount = 0;
-      if (clickResetTimeout) clearTimeout(clickResetTimeout);
-      return;
-    }
-    
-    // Double-clic (2ème clic) pour Fuite
-    if (clickCount === 2) {
-      const idx = bocaux.findIndex(function(b) { return b.id === bocal._id; });
-      if (idx !== -1 && bocaux[idx].categorie === "Fuite") {
-        const montant = bocaux[idx].montantFuite || 0;
-        bocal._investment = formatNumber((bocal._investment || 0) - montant);
-        bocaux[idx].investment = bocal._investment;
-        updateBocalDisplay(bocal);
-      }
-      return; // Pas de menu pour double-clic
-    }
-    
-    // Premier clic = menu contextuel immédiat (sauf si c'est un double-clic)
-    if (clickCount === 1) {
-      // Attendre un peu pour voir si un 2ème clic arrive
-      setTimeout(function() {
-        if (clickCount === 1) { // Toujours à 1 après le délai = simple clic
-          if (menuContextuel.style.display === "block" && menuContextuel._targetBocal === bocal) {
-            menuContextuel.style.display = "none";
-            menuContextuel._targetBocal = null;
-          } else {
-            const rect = bocal.getBoundingClientRect();
-            const landRect = land.getBoundingClientRect();
-            const menuWidth = 160; // largeur fixe du menu
-            const menuHeight = menuContextuel.offsetHeight || 200; // hauteur réelle du menu
-            
-            // Essayer plusieurs positions pour ne pas cacher le conteneur
-            let positions = [
-              // Position 1: À droite du conteneur
-              {
-                top: rect.top - landRect.top,
-                left: rect.right - landRect.left + 10,
-                condition: rect.right + menuWidth + 10 <= landRect.right
-              },
-              // Position 2: À gauche du conteneur
-              {
-                top: rect.top - landRect.top,
-                left: rect.left - landRect.left - menuWidth - 10,
-                condition: rect.left - menuWidth - 10 >= 0
-              },
-              // Position 3: Au-dessus du conteneur
-              {
-                top: rect.top - landRect.top - menuHeight - 10,
-                left: rect.left - landRect.left,
-                condition: rect.top - menuHeight - 10 >= 0
-              },
-              // Position 4: En dessous du conteneur
-              {
-                top: rect.bottom - landRect.top + 10,
-                left: rect.left - landRect.left,
-                condition: rect.bottom + menuHeight + 10 <= landRect.bottom
-              }
-            ];
-            
-            let foundPosition = false;
-            let finalTop = 0, finalLeft = 0;
-            
-            // Essayer chaque position
-            for (let pos of positions) {
-              if (pos.condition) {
-                finalTop = pos.top;
-                finalLeft = pos.left;
-                foundPosition = true;
-                break;
-              }
-            }
-            
-            // Si aucune position ne convient, mettre dans un coin
-            if (!foundPosition) {
-              finalTop = 20;
-              finalLeft = 20;
-            }
-            
-            // Ajuster pour rester dans le land
-            finalTop = Math.max(0, Math.min(finalTop, landRect.height - menuHeight));
-            finalLeft = Math.max(0, Math.min(finalLeft, landRect.width - menuWidth));
-            
-            menuContextuel.style.top = finalTop + "px";
-            menuContextuel.style.left = finalLeft + "px";
-            menuContextuel.style.display = "block";
-            menuContextuel._targetBocal = bocal;
-            btnAncrer.textContent = bocal._anchored ? "Désancrer" : "Ancrer";
-          }
-        }
-      }, 250);
-    }
-  });
-
-  // store related elements for removal
-  bocal._relatedElements = [bocal].concat(divs);
-  
-  // Ajouter l'emoji de catégorie (créé comme élément séparé)
-  applyCategorieEmoji(bocal, categorie);
-
-  // initial update (fill heights, capital text)
-  updateBocalDisplay(bocal, false);
-
-  return bocal;
+  bocalMap.set(bocal._id, bocal);
+  updateBocalDisplay(bocal);
 }
 
 // ---------------------------
@@ -4746,4 +4363,18 @@ window.addEventListener("load", function() {
   loadBocaux();
   initMission(); 
   loadMission();
+});
+
+window.addEventListener('resize', () => {
+    bocaux.forEach(data => {
+        const b = bocalMap.get(data.id);
+        if(b && data.xRatio !== undefined) {
+            const lb = land.getBoundingClientRect();
+            const newLeft = data.xRatio * lb.width;
+            const newTop = data.yRatio * lb.height;
+            b.style.left = newLeft + "px";
+            b.style.top = newTop + "px";
+            // Note: Les labels suivront au prochain rafraîchissement ou mouvement
+        }
+    });
 });
