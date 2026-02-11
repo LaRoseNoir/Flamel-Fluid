@@ -1,10 +1,9 @@
 // ==========================================
-// BLOC DE SYNCHRONISATION CLOUD (TEMPS RÉEL & RATIOS)
+// BLOC DE SYNCHRONISATION CLOUD (VERSION FINALE)
 // ==========================================
 let enTrainDeSynchroniser = false;
 let derniereSynchroLocale = 0;
 
-// ENVOI : On pousse les données avec un Timestamp
 async function synchroniserCloud() {
   if (!window.db) return;
   enTrainDeSynchroniser = true;
@@ -14,69 +13,55 @@ async function synchroniserCloud() {
   try {
     const dataToSave = {
       historique: historiquePatrimoine,
-      bocauxData: bocaux, // Les ratios xRatio et yRatio sont déjà dans les objets
+      bocauxData: bocaux,
+      missionData: JSON.parse(localStorage.getItem("missionData")) || null,
       updatedAt: maintenant
     };
     await window.fbSetDoc(window.fbDoc(window.db, "donnees", "monPatrimoine"), dataToSave);
-    console.log("⚡ Envoyé au Cloud (Instant)");
+    console.log("✅ Envoyé au Cloud : " + new Date(maintenant).toLocaleTimeString());
   } catch (e) { console.error("Erreur Cloud:", e); }
   
-  // Verrou court pour permettre une réactivité maximale
-  setTimeout(() => { enTrainDeSynchroniser = false; }, 1000);
+  setTimeout(() => { enTrainDeSynchroniser = false; }, 3000);
 }
 
-// RÉCEPTION : Écoute en temps réel (onSnapshot)
-function activerEcouteRealTime() {
-  if (!window.fbOnSnapshot) { 
-    setTimeout(activerEcouteRealTime, 500); 
+async function chargerDepuisCloud() {
+  if (!window.db || enTrainDeSynchroniser) { 
+    setTimeout(chargerDepuisCloud, 8000); 
     return; 
   }
-
-  window.fbOnSnapshot(window.fbDoc(window.db, "donnees", "monPatrimoine"), (doc) => {
-    // Si c'est nous qui venons d'écrire, on ignore la mise à jour pour éviter les sauts
-    if (enTrainDeSynchroniser) return;
-
-    if (doc.exists()) {
-      const data = doc.data();
+  try {
+    const docSnap = await window.fbGetDoc(window.fbDoc(window.db, "donnees", "monPatrimoine"));
+    if (docSnap.exists()) {
+      const data = docSnap.data();
       const updatedAtCloud = data.updatedAt || 0;
 
-      // On ne met à jour que si les données Cloud sont plus récentes que notre dernier mouvement
       if (updatedAtCloud > derniereSynchroLocale) {
-        console.log("☁️ Mise à jour reçue : Proportionnalité appliquée");
-        
+        console.log("☁️ Mise à jour reçue du Cloud...");
         bocaux = data.bocauxData || [];
         localStorage.setItem("bocaux", JSON.stringify(bocaux));
         historiquePatrimoine = data.historique || [];
         localStorage.setItem("historiquePatrimoine", JSON.stringify(historiquePatrimoine));
 
-        // Redessiner tout le terrain
+        // Rendu visuel immédiat sans rechargement
         const land = document.getElementById("land");
-        if (land) {
-          land.innerHTML = "";
-          if (typeof gridOverlay !== 'undefined') land.appendChild(gridOverlay);
-          
-          bocaux.forEach(item => {
-            // On appelle creerBocal avec les ratios xRatio et yRatio
-            creerBocal(item.nom, item.volume, item.capital, item.objectif, item.simulation, 
-                       item.left, item.top, item.zIndex, item.anchored, item.id, 
-                       item.investment, item.interest, true, item.categorie, item.composition,
-                       item.xRatio, item.yRatio);
-          });
-        }
+        land.innerHTML = "";
+        if (typeof gridOverlay !== 'undefined') land.appendChild(gridOverlay);
+        
+        bocaux.forEach(item => {
+          creerBocal(item.nom, item.volume, item.capital, item.objectif, item.simulation, item.left, item.top, item.zIndex, item.anchored, item.id, item.investment, item.interest, true, item.categorie, item.composition);
+        });
 
         updateTotalPatrimoine();
         updateTotalPatrimoineVise();
         updateTotalPatrimoineSimule();
         if (typeof dessinerGraphique === "function") dessinerGraphique();
-        
         derniereSynchroLocale = updatedAtCloud;
       }
     }
-  });
+  } catch (e) { console.error("Erreur chargement:", e); }
+  setTimeout(chargerDepuisCloud, 8000);
 }
-
-// Lancement de l'écoute instantanée
-activerEcouteRealTime();
+setTimeout(chargerDepuisCloud, 2000);
 
 // ========================================
 // LOGIQUE DE SAUVEGARDE ET CALCULS
@@ -101,7 +86,6 @@ function sauvegarderHistorique() {
 
 // Lancement initial
 setTimeout(chargerDepuisCloud, 2000);
-
 // ========================================
 // SYSTÈME DE GRAPHIQUE
 // ========================================
@@ -4762,3 +4746,4 @@ window.addEventListener("load", function() {
   initMission(); 
   loadMission();
 });
+
