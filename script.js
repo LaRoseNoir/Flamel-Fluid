@@ -86,6 +86,7 @@ function sauvegarderHistorique() {
 
 // Lancement initial
 setTimeout(chargerDepuisCloud, 2000);
+
 // ========================================
 // SYSTÈME DE GRAPHIQUE
 // ========================================
@@ -4746,4 +4747,3 @@ window.addEventListener("load", function() {
   initMission(); 
   loadMission();
 });
-
