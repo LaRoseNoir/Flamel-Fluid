@@ -1,29 +1,36 @@
 // ==========================================
-// BLOC DE SYNCHRONISATION CLOUD
+// BLOC DE SYNCHRONISATION CLOUD (VERSION STABLE)
 // ==========================================
+let enTrainDeSynchroniser = false;
+let derniereSynchroLocale = 0;
+
 async function synchroniserCloud() {
   if (!window.db) return;
-  enTrainDeSynchroniser = true; // On ferme le verrou
+  enTrainDeSynchroniser = true;
+  
+  const maintenant = Date.now();
+  derniereSynchroLocale = maintenant; // On note qu'on vient d'envoyer
+
   try {
     const dataToSave = {
       historique: historiquePatrimoine,
       bocauxData: bocaux,
       missionData: JSON.parse(localStorage.getItem("missionData")) || null,
-      lastSync: Date.now()
+      updatedAt: maintenant // On marque l'heure de l'envoi
     };
     await window.fbSetDoc(window.fbDoc(window.db, "donnees", "monPatrimoine"), dataToSave);
-    console.log("✅ Synchronisé sur le Cloud");
-  } catch (e) { console.error("Erreur Cloud:", e); }
+    console.log("✅ Envoyé au Cloud à " + new Date(maintenant).toLocaleTimeString());
+  } catch (e) { 
+    console.error("Erreur Cloud:", e); 
+  }
   
-  // On attend 2 secondes avant de réouvrir le verrou pour laisser le temps au réseau
-  setTimeout(() => { enTrainDeSynchroniser = false; }, 2000);
+  setTimeout(() => { enTrainDeSynchroniser = false; }, 3000);
 }
 
-let enTrainDeSynchroniser = false; // Le verrou
-
 async function chargerDepuisCloud() {
+  // Si on est en train d'envoyer, on ne télécharge rien pour éviter la boucle
   if (!window.db || enTrainDeSynchroniser) { 
-    setTimeout(chargerDepuisCloud, 1000); 
+    setTimeout(chargerDepuisCloud, 5000); 
     return; 
   }
   
@@ -31,49 +38,48 @@ async function chargerDepuisCloud() {
     const docSnap = await window.fbGetDoc(window.fbDoc(window.db, "donnees", "monPatrimoine"));
     if (docSnap.exists()) {
       const data = docSnap.data();
-      
-      // Comparaison stricte pour éviter les boucles
-      const cloudDataStr = JSON.stringify(data.bocauxData);
-      const localDataStr = localStorage.getItem("bocaux");
+      const updatedAtCloud = data.updatedAt || 0;
 
-      if (cloudDataStr !== localDataStr) {
-        console.log("☁️ Mise à jour depuis le Cloud détectée...");
+      // CONDITION CRUCIALE : On ne charge QUE si les données du Cloud sont plus récentes que notre dernière action
+      if (updatedAtCloud > derniereSynchroLocale) {
+        console.log("☁️ Mise à jour Cloud plus récente détectée...");
         
-        // On met à jour la mémoire locale
-        bocaux = data.bocauxData;
-        localStorage.setItem("bocaux", cloudDataStr);
+        // Mise à jour des données
+        bocaux = data.bocauxData || [];
+        localStorage.setItem("bocaux", JSON.stringify(bocaux));
         
         if (data.historique) {
           historiquePatrimoine = data.historique;
-          localStorage.setItem("historiquePatrimoine", JSON.stringify(data.historique));
+          localStorage.setItem("historiquePatrimoine", JSON.stringify(historiquePatrimoine));
         }
 
-        // MISE À JOUR VISUELLE SANS RECHARGER LA PAGE
-        // On vide le land
+        // Mise à jour visuelle fluide (SANS RELOAD)
         const land = document.getElementById("land");
-        land.innerHTML = ""; 
-        // On remet la grille
-        if (gridOverlay) land.appendChild(gridOverlay);
-        
-        // On recrée les bocaux
-        bocaux.forEach(item => {
-          creerBocal(item.nom, item.volume, item.capital, item.objectif, item.simulation, item.left, item.top, item.zIndex, item.anchored, item.id, item.investment, item.interest, true, item.categorie, item.composition);
-        });
+        if (land) {
+            land.innerHTML = ""; 
+            if (typeof gridOverlay !== 'undefined') land.appendChild(gridOverlay);
+            
+            bocaux.forEach(item => {
+              creerBocal(item.nom, item.volume, item.capital, item.objectif, item.simulation, item.left, item.top, item.zIndex, item.anchored, item.id, item.investment, item.interest, true, item.categorie, item.composition);
+            });
+        }
 
         updateTotalPatrimoine();
         updateTotalPatrimoineVise();
         updateTotalPatrimoineSimule();
         if (typeof dessinerGraphique === "function") dessinerGraphique();
+        
+        derniereSynchroLocale = updatedAtCloud; // On se met à jour sur l'heure
       }
     }
   } catch (e) { console.error("Erreur chargement Cloud:", e); }
   
-  // On vérifie toutes les 5 secondes seulement pour économiser la batterie et éviter les boucles
-  setTimeout(chargerDepuisCloud, 5000); 
+  // On vérifie toutes les 10 secondes (plus calme pour le mobile)
+  setTimeout(chargerDepuisCloud, 10000); 
 }
-chargerDepuisCloud();
-// ==========================================
 
+// Lancement initial
+setTimeout(chargerDepuisCloud, 2000);
 
 // ========================================
 // SYSTÈME DE GRAPHIQUE
