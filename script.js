@@ -1,5 +1,5 @@
 // ==========================================
-// BLOC DE SYNCHRONISATION CLOUD (VERSION STABLE)
+// BLOC DE SYNCHRONISATION CLOUD (VERSION FINALE)
 // ==========================================
 let enTrainDeSynchroniser = false;
 let derniereSynchroLocale = 0;
@@ -7,76 +7,82 @@ let derniereSynchroLocale = 0;
 async function synchroniserCloud() {
   if (!window.db) return;
   enTrainDeSynchroniser = true;
-  
   const maintenant = Date.now();
-  derniereSynchroLocale = maintenant; // On note qu'on vient d'envoyer
+  derniereSynchroLocale = maintenant;
 
   try {
     const dataToSave = {
       historique: historiquePatrimoine,
       bocauxData: bocaux,
       missionData: JSON.parse(localStorage.getItem("missionData")) || null,
-      updatedAt: maintenant // On marque l'heure de l'envoi
+      updatedAt: maintenant
     };
     await window.fbSetDoc(window.fbDoc(window.db, "donnees", "monPatrimoine"), dataToSave);
-    console.log("✅ Envoyé au Cloud à " + new Date(maintenant).toLocaleTimeString());
-  } catch (e) { 
-    console.error("Erreur Cloud:", e); 
-  }
+    console.log("✅ Envoyé au Cloud : " + new Date(maintenant).toLocaleTimeString());
+  } catch (e) { console.error("Erreur Cloud:", e); }
   
   setTimeout(() => { enTrainDeSynchroniser = false; }, 3000);
 }
 
 async function chargerDepuisCloud() {
-  // Si on est en train d'envoyer, on ne télécharge rien pour éviter la boucle
   if (!window.db || enTrainDeSynchroniser) { 
-    setTimeout(chargerDepuisCloud, 5000); 
+    setTimeout(chargerDepuisCloud, 8000); 
     return; 
   }
-  
   try {
     const docSnap = await window.fbGetDoc(window.fbDoc(window.db, "donnees", "monPatrimoine"));
     if (docSnap.exists()) {
       const data = docSnap.data();
       const updatedAtCloud = data.updatedAt || 0;
 
-      // CONDITION CRUCIALE : On ne charge QUE si les données du Cloud sont plus récentes que notre dernière action
       if (updatedAtCloud > derniereSynchroLocale) {
-        console.log("☁️ Mise à jour Cloud plus récente détectée...");
-        
-        // Mise à jour des données
+        console.log("☁️ Mise à jour reçue du Cloud...");
         bocaux = data.bocauxData || [];
         localStorage.setItem("bocaux", JSON.stringify(bocaux));
-        
-        if (data.historique) {
-          historiquePatrimoine = data.historique;
-          localStorage.setItem("historiquePatrimoine", JSON.stringify(historiquePatrimoine));
-        }
+        historiquePatrimoine = data.historique || [];
+        localStorage.setItem("historiquePatrimoine", JSON.stringify(historiquePatrimoine));
 
-        // Mise à jour visuelle fluide (SANS RELOAD)
+        // Rendu visuel immédiat sans rechargement
         const land = document.getElementById("land");
-        if (land) {
-            land.innerHTML = ""; 
-            if (typeof gridOverlay !== 'undefined') land.appendChild(gridOverlay);
-            
-            bocaux.forEach(item => {
-              creerBocal(item.nom, item.volume, item.capital, item.objectif, item.simulation, item.left, item.top, item.zIndex, item.anchored, item.id, item.investment, item.interest, true, item.categorie, item.composition);
-            });
-        }
+        land.innerHTML = "";
+        if (typeof gridOverlay !== 'undefined') land.appendChild(gridOverlay);
+        
+        bocaux.forEach(item => {
+          creerBocal(item.nom, item.volume, item.capital, item.objectif, item.simulation, item.left, item.top, item.zIndex, item.anchored, item.id, item.investment, item.interest, true, item.categorie, item.composition);
+        });
 
         updateTotalPatrimoine();
         updateTotalPatrimoineVise();
         updateTotalPatrimoineSimule();
         if (typeof dessinerGraphique === "function") dessinerGraphique();
-        
-        derniereSynchroLocale = updatedAtCloud; // On se met à jour sur l'heure
+        derniereSynchroLocale = updatedAtCloud;
       }
     }
-  } catch (e) { console.error("Erreur chargement Cloud:", e); }
-  
+  } catch (e) { console.error("Erreur chargement:", e); }
+  setTimeout(chargerDepuisCloud, 8000);
+}
+setTimeout(chargerDepuisCloud, 2000);
+
+// ========================================
+// LOGIQUE DE SAUVEGARDE ET CALCULS
+// ========================================
+
+function saveBocaux() {
+  localStorage.setItem("bocaux", JSON.stringify(bocaux));
+  updateTotalPatrimoine();
+  updateTotalPatrimoineVise();
+  updateTotalPatrimoineSimule();
+  // IMPORTANT : On synchronise dès qu'on sauvegarde
+  synchroniserCloud(); 
+}
+
+function sauvegarderHistorique() {
+  localStorage.setItem("historiquePatrimoine", JSON.stringify(historiquePatrimoine));
+  synchroniserCloud();
+}  
+
   // On vérifie toutes les 10 secondes (plus calme pour le mobile)
   setTimeout(chargerDepuisCloud, 10000); 
-}
 
 // Lancement initial
 setTimeout(chargerDepuisCloud, 2000);
