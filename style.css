@@ -25,6 +25,9 @@ body {
   flex: 1;
   position: relative;
   overflow: hidden;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
 }
 
 #footer {
@@ -521,27 +524,41 @@ body {
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
-/* RESPONSIVE DESIGN */
+/* ==========================================
+   ADAPTATION MOBILE & TABLETTE
+   ========================================== */
 @media (max-width: 768px) {
+  /* Réduit la taille des textes du header */
   #header {
-    font-size: 12px !important;
-    padding: 5px;
+    font-size: 13px !important;
+    padding: 5px !important;
   }
-  #header b { font-size: 14px; }
-  
+
+  /* Rend les bocaux un peu plus petits sur mobile pour ne pas encombrer */
   .bocal {
-    transform: scale(0.8); /* Réduit la taille des bocaux sur mobile */
+    transform: scale(0.85);
     transform-origin: top left;
   }
-  
+
+  /* Ajuste la fenêtre du graphique pour qu'elle prenne tout l'écran */
   #graphiqueFenetre {
-    width: 95% !important;
-    height: 90% !important;
-    left: 2.5% !important;
-    top: 5% !important;
+    width: 98% !important;
+    height: 95% !important;
+    left: 1% !important;
+    top: 2.5% !important;
+    margin: 0 !important;
+    transform: none !important;
   }
-  
+
+  /* Grille de stats du graphique sur 2 colonnes au lieu de 3 */
   #graphiqueStats {
-    grid-template-columns: 1fr 1fr; /* 2 colonnes au lieu de 3 sur mobile */
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 5px !important;
+  }
+
+  /* Agrandit les boutons du menu contextuel pour les doigts */
+  .menu-contextuel button {
+    padding: 12px 15px !important;
+    font-size: 16px !important;
   }
 }
