@@ -561,4 +561,27 @@ body {
     padding: 12px 15px !important;
     font-size: 16px !important;
   }
+
+  /* Meilleur espacement pour les labels */
+  div[data-role] {
+    font-size: 12px !important;
+  }
+  
+  /* Emoji plus petit sur mobile */
+  .categorie-emoji {
+    font-size: 20px !important;
+  }
 }
+
+/* Orientation paysage mobile */
+@media (max-height: 500px) and (orientation: landscape) {
+  #header {
+    font-size: 11px !important;
+    padding: 3px !important;
+  }
+  
+  .bocal {
+    transform: scale(0.8);
+  }
+}
+
