@@ -4183,11 +4183,20 @@ function creerBocal(nom, volume, capital, objectif, simulation, left, top, zInde
   let finalLeft = left || 100;
   let finalTop = top || 100;
 
-  if (xRatio !== undefined && xRatio !== null) {
+  if (xRatio !== undefined && xRatio !== null && yRatio !== undefined && yRatio !== null) {
     finalLeft = xRatio * landRect.width;
     finalTop = yRatio * landRect.height;
+    
+    // Vérifier que le bocal reste dans les limites
+    const maxLeft = landRect.width - bocalWidth;
+    const maxTop = landRect.height - bocalWidth;
+    
+    if (finalLeft > maxLeft) finalLeft = maxLeft;
+    if (finalTop > maxTop) finalTop = maxTop;
+    if (finalLeft < 0) finalLeft = 0;
+    if (finalTop < 0) finalTop = 0;
   }
-
+  
   Object.assign(bocal.style, {
     width: bocalWidth + "px", height: bocalWidth + "px", borderLeft: "4px solid black",
     borderRight: "4px solid black", borderBottom: "4px solid black", borderTop: "none",
@@ -4283,19 +4292,90 @@ function creerBocal(nom, volume, capital, objectif, simulation, left, top, zInde
     };
 
     const onMouseUp = () => {
-      isDragging = false; gridOverlay.style.display = "none";
+      isDragging = false; 
+      gridOverlay.style.display = "none";
+      
       const lb = land.getBoundingClientRect();
       const idx = bocaux.findIndex(b => b.id === bocal._id);
+      
       if (idx !== -1) {
-        bocaux[idx].xRatio = parseFloat(bocal.style.left) / lb.width;
-        bocaux[idx].yRatio = parseFloat(bocal.style.top) / lb.height;
+        const currentLeft = parseFloat(bocal.style.left) || 0;
+        const currentTop = parseFloat(bocal.style.top) || 0;
+        
+        bocaux[idx].left = currentLeft;
+        bocaux[idx].top = currentTop;
+        bocaux[idx].xRatio = currentLeft / lb.width;
+        bocaux[idx].yRatio = currentTop / lb.height;
+        
         saveBocaux();
       }
-      document.removeEventListener("mousemove", onMouseMove); document.removeEventListener("mouseup", onMouseUp);
+      
+      document.removeEventListener("mousemove", onMouseMove); 
+      document.removeEventListener("mouseup", onMouseUp);
     };
-    document.addEventListener("mousemove", onMouseMove); document.addEventListener("mouseup", onMouseUp);
   });
 
+  // Support tactile pour mobile
+  bocal.addEventListener("touchstart", (e) => {
+    if (bocal._anchored) return;
+    
+    const touch = e.touches[0];
+    isDragging = true;
+    ox = touch.clientX - bocal.offsetLeft;
+    oy = touch.clientY - bocal.offsetTop;
+    gridOverlay.style.display = "block";
+    
+    e.preventDefault();
+
+    const onTouchMove = (ev) => {
+      if (!isDragging) return;
+      
+      const touch = ev.touches[0];
+      const lb = land.getBoundingClientRect();
+      let nl = Math.max(0, Math.min(touch.clientX - ox, lb.width - bocalWidth));
+      let nt = Math.max(0, Math.min(touch.clientY - oy, lb.height - bocalWidth));
+      
+      nl = Math.round((nl + bocalWidth/2) / 20) * 20 - bocalWidth/2;
+      nt = Math.round((nt + bocalWidth/2) / 20) * 20 - bocalWidth/2;
+      
+      bocal.style.left = nl + "px";
+      bocal.style.top = nt + "px";
+      
+      divs.forEach((d, i) => {
+        d.style.left = (nl + bocalWidth/2) + "px";
+        d.style.top = (nt + bocalWidth + 5 + i * lineHeight) + "px";
+      });
+      
+      ev.preventDefault();
+    };
+
+    const onTouchEnd = () => {
+      isDragging = false;
+      gridOverlay.style.display = "none";
+      
+      const lb = land.getBoundingClientRect();
+      const idx = bocaux.findIndex(b => b.id === bocal._id);
+      
+      if (idx !== -1) {
+        const currentLeft = parseFloat(bocal.style.left) || 0;
+        const currentTop = parseFloat(bocal.style.top) || 0;
+        
+        bocaux[idx].left = currentLeft;
+        bocaux[idx].top = currentTop;
+        bocaux[idx].xRatio = currentLeft / lb.width;
+        bocaux[idx].yRatio = currentTop / lb.height;
+        
+        saveBocaux();
+      }
+      
+      document.removeEventListener("touchmove", onTouchMove);
+      document.removeEventListener("touchend", onTouchEnd);
+    };
+    
+    document.addEventListener("touchmove", onTouchMove, { passive: false });
+    document.addEventListener("touchend", onTouchEnd);
+  });
+  
   if (!fromLoad) {
     const lb = land.getBoundingClientRect();
     bocaux.push({
@@ -4372,16 +4452,105 @@ window.addEventListener("load", function() {
   loadMission();
 });
 
-window.addEventListener('resize', () => {
-    bocaux.forEach(data => {
-        const b = bocalMap.get(data.id);
-        if(b && data.xRatio !== undefined) {
-            const lb = land.getBoundingClientRect();
-            const newLeft = data.xRatio * lb.width;
-            const newTop = data.yRatio * lb.height;
-            b.style.left = newLeft + "px";
-            b.style.top = newTop + "px";
-            // Note: Les labels suivront au prochain rafraîchissement ou mouvement
-        }
+// ==========================================
+// GESTION DU RESIZE ET ORIENTATION MOBILE
+// ==========================================
+
+let resizeTimeout = null;
+
+function repositionnerTousBocaux() {
+  const landBounds = getLandBounds();
+  
+  bocaux.forEach(data => {
+    const bocal = bocalMap.get(data.id);
+    if (!bocal || data.xRatio === undefined) return;
+    
+    // Calculer la nouvelle position basée sur les ratios
+    const bocalWidth = parseFloat(bocal.style.width) || bocal.offsetWidth;
+    let newLeft = data.xRatio * landBounds.width;
+    let newTop = data.yRatio * landBounds.height;
+    
+    // Vérifier les limites pour ne pas sortir du land
+    if (newLeft < 0) newLeft = 0;
+    if (newTop < 0) newTop = 0;
+    if (newLeft + bocalWidth > landBounds.width) {
+      newLeft = landBounds.width - bocalWidth;
+    }
+    if (newTop + bocalWidth > landBounds.height) {
+      newTop = landBounds.height - bocalWidth;
+    }
+    
+    // Appliquer la position
+    bocal.style.left = newLeft + "px";
+    bocal.style.top = newTop + "px";
+    
+    // Repositionner les labels
+    const related = bocal._relatedElements || [];
+    const lineHeight = 18;
+    const divs = related.slice(1).filter(el => el.dataset && el.dataset.role);
+    
+    divs.forEach((d, i) => {
+      d.style.left = (newLeft + bocalWidth/2) + "px";
+      d.style.top = (newTop + bocalWidth + 5 + i * lineHeight) + "px";
     });
+    
+    // Repositionner l'emoji
+    const emojiEl = document.querySelector('[data-emoji-for="' + bocal._id + '"]');
+    if (emojiEl) {
+      const borderSize = 4;
+      const totalSize = bocalWidth + (borderSize * 2);
+      const quartSize = totalSize * 0.25;
+      
+      emojiEl.style.left = (newLeft + bocalWidth + borderSize - quartSize) + "px";
+      emojiEl.style.top = (newTop + bocalWidth + borderSize - quartSize) + "px";
+      emojiEl.style.width = quartSize + "px";
+      emojiEl.style.height = quartSize + "px";
+      
+      const emojiSize = quartSize * 0.8;
+      emojiEl.style.fontSize = emojiSize + "px";
+    }
+    
+    // Repositionner le popup s'il est visible
+    if (bocal._popup && bocal._popup.style.display === "block") {
+      const rect = bocal.getBoundingClientRect();
+      bocal._popup.style.top = (rect.top + window.pageYOffset - 50) + "px";
+      bocal._popup.style.left = (rect.right + window.pageXOffset + 10) + "px";
+    }
+  });
+  
+  // Ajuster le menu contextuel s'il est ouvert
+  if (menuContextuel._targetBocal && menuContextuel.style.display === "block") {
+    ajusterPositionMenu(menuContextuel._targetBocal);
+  }
+}
+
+// Listener resize avec debounce
+window.addEventListener('resize', () => {
+  if (resizeTimeout) {
+    clearTimeout(resizeTimeout);
+  }
+  
+  resizeTimeout = setTimeout(() => {
+    repositionnerTousBocaux();
+    
+    if (graphiqueFenetre.style.display === "flex") {
+      dessinerGraphique();
+    }
+  }, 150);
+});
+
+// Listener pour changement d'orientation mobile
+window.addEventListener('orientationchange', () => {
+  setTimeout(() => {
+    repositionnerTousBocaux();
+    
+    if (graphiqueFenetre.style.display === "flex") {
+      dessinerGraphique();
+    }
+  }, 300);
+});
+
+// Repositionner au chargement
+window.addEventListener('load', () => {
+  setTimeout(repositionnerTousBocaux, 100);
 });
