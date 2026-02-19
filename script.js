@@ -4225,11 +4225,14 @@ function creerBocal(nom, volume, capital, objectif, simulation, left, top, zInde
 
   const lines = [
     { text: nom, color: "#000", role: "nom" },
+    { text: volume > 0 ? formatMoney(volume) : null, color: "#999", role: "plafond" },
     { text: formatMoney(capital), color: "#2ecc71", role: "capital" },
-    { text: formatMoney(objectif), color: "#e74c3c", role: "objectif" }
+    { text: formatMoney(objectif), color: "#e74c3c", role: "objectif" },
+    { text: formatMoney(simulation), color: "#FF8C00", role: "simulation" }
   ];
 
-  const divs = lines.map((ln, i) => {
+  const lines_filtered = lines.filter(ln => ln.text !== null);
+  const divs = lines_filtered.map((ln, i) => {
     const d = document.createElement("div");
     d.textContent = ln.text;
     Object.assign(d.style, {
@@ -4241,7 +4244,7 @@ function creerBocal(nom, volume, capital, objectif, simulation, left, top, zInde
     return d;
   });
 
-  divs.forEach((d, i) => { d.dataset.role = lines[i].role; });
+  divs.forEach((d, i) => { d.dataset.role = lines_filtered[i].role; });
   bocal._relatedElements = [bocal, ...divs];
   
   // --- GESTION DES CLICS (TOUTES FONCTIONS) ---
@@ -4561,6 +4564,7 @@ window.addEventListener('orientationchange', () => {
 window.addEventListener('load', () => {
   setTimeout(repositionnerTousBocaux, 100);
 });
+
 
 
 
