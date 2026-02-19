@@ -1702,6 +1702,40 @@ function afficherFenetre(){
 // INTERFACE DE VERSEMENT AMÉLIORÉE POUR LES GOÛTES
 // ---------------------------
 
+// Afficher infos popup dans le menu contextuel sur mobile
+function mettreAJourInfoMenuMobile(bocal) {
+  if (!isTouchDevice()) return;
+  let infoDiv = document.getElementById("menuInfoMobile");
+  if (!infoDiv) {
+    infoDiv = document.createElement("div");
+    infoDiv.id = "menuInfoMobile";
+    Object.assign(infoDiv.style, {
+      padding: "8px 12px",
+      fontSize: "12px",
+      color: "#555",
+      borderBottom: "1px solid #eee",
+      marginBottom: "4px",
+      lineHeight: "1.8"
+    });
+    menuContextuel.insertBefore(infoDiv, menuContextuel.firstChild);
+  }
+  const idx = bocaux.findIndex(b => b.id === bocal._id);
+  if (idx === -1) return;
+  const b = bocaux[idx];
+  let html = "<strong>" + b.nom + "</strong><br>";
+  if (b.categorie === "Goutte") {
+    html += "Billets: " + formatMoney(b.investment) + "<br>";
+    html += "Pièces: "  + formatMoney(b.interest)   + "<br>";
+  } else if (b.categorie === "Fuite") {
+    html += "Investissement: " + formatMoney(b.investment) + "<br>";
+  } else {
+    html += "Investissement: " + formatMoney(b.investment) + "<br>";
+    html += "Intérêts: "       + formatMoney(b.interest)   + "<br>";
+  }
+  html += "<strong style='color:#2ecc71'>Capital: " + formatMoney(b.capital) + "</strong>";
+  infoDiv.innerHTML = html;
+}
+
 function afficherVersement(){
   clearFenetreContent();
   fenetreHeaderTitle.textContent = "Versement";
@@ -4290,7 +4324,11 @@ function creerBocal(nom, volume, capital, objectif, simulation, left, top, zInde
   document.body.appendChild(popup);
   bocal._popup = popup;
 
+  // Hover desktop uniquement
+  const isTouchDevice = () => window.matchMedia("(hover: none)").matches;
+
   bocal.addEventListener("mouseenter", function() {
+    if (isTouchDevice()) return;
     const rect = bocal.getBoundingClientRect();
     popup.style.display = "block";
     popup.style.top  = (rect.top  + window.pageYOffset - 10) + "px";
@@ -4298,6 +4336,7 @@ function creerBocal(nom, volume, capital, objectif, simulation, left, top, zInde
   });
 
   bocal.addEventListener("mouseleave", function() {
+    if (isTouchDevice()) return;
     popup.style.display = "none";
   });
 
@@ -4314,6 +4353,7 @@ function creerBocal(nom, volume, capital, objectif, simulation, left, top, zInde
         menuContextuel.style.display = "block";
         menuContextuel._targetBocal = bocal;
         btnAncrer.textContent = bocal._anchored ? "Désancrer" : "Ancrer";
+        mettreAJourInfoMenuMobile(bocal);
       } else if (clickCount === 2) { // DOUBLE CLIC : FUITE
         const idx = bocaux.findIndex(b => b.id === bocal._id);
         if (idx !== -1 && bocaux[idx].categorie === "Fuite") {
@@ -4618,6 +4658,7 @@ window.addEventListener('orientationchange', () => {
 window.addEventListener('load', () => {
   setTimeout(repositionnerTousBocaux, 100);
 });
+
 
 
 
