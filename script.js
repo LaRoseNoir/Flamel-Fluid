@@ -2623,6 +2623,60 @@ function afficherParametre(bocalElem, keepObjectif = null, keepSimulation = null
     '</div></div>';
   }
 
+  // Panel info capital
+  let infoHtml = '<div style="margin-top:20px;padding:8px;background:#e8f5e9;border-radius:4px;">';
+  
+  if (currentCategorie === "Goutte") {
+    let totalBillets = 0, totalPieces = 0;
+    Object.keys(currentComposition).forEach(function(label) {
+      const qty = currentComposition[label] || 0;
+      const valInfo = monnaieValues.flatMap(function(g) { return g.values; }).find(function(v) { return v.label === label; });
+      if (valInfo) {
+        const montant = qty * valInfo.value;
+        if (label === "5€" || label === "10€" || label === "20€" || label === "50€") totalBillets += montant;
+        else totalPieces += montant;
+      }
+    });
+    infoHtml +=
+      '<div style="display:flex;justify-content:space-between;margin-bottom:4px;">' +
+        '<span style="color:#007BFF;font-weight:bold;">Billets:</span>' +
+        '<span style="color:#007BFF;font-weight:bold;">' + formatMoney(totalBillets) + '</span>' +
+      '</div>' +
+      '<div style="display:flex;justify-content:space-between;margin-bottom:4px;">' +
+        '<span style="color:#D79A10;font-weight:bold;">Pièces:</span>' +
+        '<span style="color:#D79A10;font-weight:bold;">' + formatMoney(totalPieces) + '</span>' +
+      '</div>' +
+      '<div style="display:flex;justify-content:space-between;border-top:1px solid #ccc;padding-top:4px;margin-top:4px;">' +
+        '<span style="color:#2ecc71;font-weight:bold;">Total:</span>' +
+        '<span style="color:#2ecc71;font-weight:bold;">' + formatMoney(totalBillets + totalPieces) + '</span>' +
+      '</div>';
+  } else if (currentCategorie === "Fuite") {
+    const inv = (idx !== -1) ? (bocaux[idx].investment || 0) : 0;
+    infoHtml +=
+      '<div style="display:flex;justify-content:space-between;">' +
+        '<span style="color:#007BFF;font-weight:bold;">Investissement:</span>' +
+        '<span style="color:#007BFF;font-weight:bold;">' + formatMoney(inv) + '</span>' +
+      '</div>';
+  } else {
+    const inv  = (idx !== -1) ? (bocaux[idx].investment || 0) : 0;
+    const intr = (idx !== -1) ? (bocaux[idx].interest   || 0) : 0;
+    infoHtml +=
+      '<div style="display:flex;justify-content:space-between;margin-bottom:4px;">' +
+        '<span style="color:#007BFF;font-weight:bold;">Investissement:</span>' +
+        '<span style="color:#007BFF;font-weight:bold;">' + formatMoney(inv) + '</span>' +
+      '</div>' +
+      '<div style="display:flex;justify-content:space-between;margin-bottom:4px;">' +
+        '<span style="color:#D79A10;font-weight:bold;">Intérêts:</span>' +
+        '<span style="color:#D79A10;font-weight:bold;">' + formatMoney(intr) + '</span>' +
+      '</div>' +
+      '<div style="display:flex;justify-content:space-between;border-top:1px solid #ccc;padding-top:4px;margin-top:4px;">' +
+        '<span style="color:#2ecc71;font-weight:bold;">Capital:</span>' +
+        '<span style="color:#2ecc71;font-weight:bold;">' + formatMoney(inv + intr) + '</span>' +
+      '</div>';
+  }
+  infoHtml += '</div>';
+
+  html += infoHtml;
   html += '<div style="text-align:center;margin-top:16px;">' +
         '<button id="validerParam" style="background:black;color:white;border:none;padding:8px 16px;border-radius:4px;cursor:pointer;">Valider</button>' +
       '</div>' +
@@ -4280,66 +4334,7 @@ function creerBocal(nom, volume, capital, objectif, simulation, left, top, zInde
 
   divs.forEach((d, i) => { d.dataset.role = lines_filtered[i].role; });
   bocal._relatedElements = [bocal, ...divs];
-  // --- POPUP ---
-  const popup = document.createElement("div");
-  Object.assign(popup.style, {
-    position: "absolute",
-    background: "rgba(0,0,0,0.75)",
-    color: "white",
-    padding: "8px 12px",
-    borderRadius: "6px",
-    fontSize: "13px",
-    pointerEvents: "none",
-    display: "none",
-    zIndex: 40000,
-    whiteSpace: "nowrap",
-    lineHeight: "1.8"
-  });
-
-  const pvInv  = document.createElement("div"); pvInv.className  = "pv-inv";
-  const pvIntr = document.createElement("div"); pvIntr.className = "pv-intr";
-  const pvCap  = document.createElement("div"); pvCap.className  = "pv-cap";
-
-  if (categorie === "Fuite") {
-    pvInv.textContent = "Investissement: " + formatMoney(investment);
-    popup.appendChild(pvInv);
-  } else if (categorie === "Goutte") {
-    pvInv.textContent  = "Billets: " + formatMoney(investment);
-    pvIntr.textContent = "Pièces: "  + formatMoney(interest);
-    popup.appendChild(pvInv);
-    popup.appendChild(pvIntr);
-  } else {
-    pvInv.textContent  = "Investissement: " + formatMoney(investment);
-    pvIntr.textContent = "Intérêts: "       + formatMoney(interest);
-    popup.appendChild(pvInv);
-    popup.appendChild(pvIntr);
-  }
-
-  pvCap.textContent = "Capital: " + formatMoney(capital);
-  pvCap.style.borderTop = "1px solid rgba(255,255,255,0.3)";
-  pvCap.style.marginTop = "4px";
-  pvCap.style.paddingTop = "4px";
-  popup.appendChild(pvCap);
-
-  document.body.appendChild(popup);
-  bocal._popup = popup;
-
-  // Hover desktop uniquement
-  const isTouchDevice = () => window.matchMedia("(hover: none)").matches;
-
-  bocal.addEventListener("mouseenter", function() {
-    if (isTouchDevice()) return;
-    const rect = bocal.getBoundingClientRect();
-    popup.style.display = "block";
-    popup.style.top  = (rect.top  + window.pageYOffset - 10) + "px";
-    popup.style.left = (rect.right + window.pageXOffset + 10) + "px";
-  });
-
-  bocal.addEventListener("mouseleave", function() {
-    if (isTouchDevice()) return;
-    popup.style.display = "none";
-  });
-
+  
   // --- GESTION DES CLICS (TOUTES FONCTIONS) ---
   let clickCount = 0;
   bocal.addEventListener("click", (e) => {
@@ -4658,6 +4653,7 @@ window.addEventListener('orientationchange', () => {
 window.addEventListener('load', () => {
   setTimeout(repositionnerTousBocaux, 100);
 });
+
 
 
 
