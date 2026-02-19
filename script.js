@@ -4240,6 +4240,9 @@ function creerBocal(nom, volume, capital, objectif, simulation, left, top, zInde
     return d;
   });
 
+  divs.forEach((d, i) => { d.dataset.role = lines[i].role; });
+  bocal._relatedElements = [bocal, ...divs];
+  
   // --- GESTION DES CLICS (TOUTES FONCTIONS) ---
   let clickCount = 0;
   bocal.addEventListener("click", (e) => {
@@ -4313,6 +4316,8 @@ function creerBocal(nom, volume, capital, objectif, simulation, left, top, zInde
       document.removeEventListener("mousemove", onMouseMove); 
       document.removeEventListener("mouseup", onMouseUp);
     };
+    document.addEventListener("mousemove", onMouseMove);
+    document.addEventListener("mouseup", onMouseUp);
   });
 
   // Support tactile pour mobile
@@ -4554,3 +4559,4 @@ window.addEventListener('orientationchange', () => {
 window.addEventListener('load', () => {
   setTimeout(repositionnerTousBocaux, 100);
 });
+
