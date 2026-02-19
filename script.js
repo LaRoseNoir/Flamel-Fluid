@@ -4392,6 +4392,7 @@ function creerBocal(nom, volume, capital, objectif, simulation, left, top, zInde
   }
   bocalMap.set(bocal._id, bocal);
   updateBocalDisplay(bocal);
+  return bocal;
 }
 
 // ---------------------------
@@ -4559,4 +4560,5 @@ window.addEventListener('orientationchange', () => {
 window.addEventListener('load', () => {
   setTimeout(repositionnerTousBocaux, 100);
 });
+
 
