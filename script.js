@@ -4246,7 +4246,61 @@ function creerBocal(nom, volume, capital, objectif, simulation, left, top, zInde
 
   divs.forEach((d, i) => { d.dataset.role = lines_filtered[i].role; });
   bocal._relatedElements = [bocal, ...divs];
-  
+  // --- POPUP ---
+  const popup = document.createElement("div");
+  Object.assign(popup.style, {
+    position: "absolute",
+    background: "rgba(0,0,0,0.75)",
+    color: "white",
+    padding: "8px 12px",
+    borderRadius: "6px",
+    fontSize: "13px",
+    pointerEvents: "none",
+    display: "none",
+    zIndex: 40000,
+    whiteSpace: "nowrap",
+    lineHeight: "1.8"
+  });
+
+  const pvInv  = document.createElement("div"); pvInv.className  = "pv-inv";
+  const pvIntr = document.createElement("div"); pvIntr.className = "pv-intr";
+  const pvCap  = document.createElement("div"); pvCap.className  = "pv-cap";
+
+  if (categorie === "Fuite") {
+    pvInv.textContent = "Investissement: " + formatMoney(investment);
+    popup.appendChild(pvInv);
+  } else if (categorie === "Goutte") {
+    pvInv.textContent  = "Billets: " + formatMoney(investment);
+    pvIntr.textContent = "Pièces: "  + formatMoney(interest);
+    popup.appendChild(pvInv);
+    popup.appendChild(pvIntr);
+  } else {
+    pvInv.textContent  = "Investissement: " + formatMoney(investment);
+    pvIntr.textContent = "Intérêts: "       + formatMoney(interest);
+    popup.appendChild(pvInv);
+    popup.appendChild(pvIntr);
+  }
+
+  pvCap.textContent = "Capital: " + formatMoney(capital);
+  pvCap.style.borderTop = "1px solid rgba(255,255,255,0.3)";
+  pvCap.style.marginTop = "4px";
+  pvCap.style.paddingTop = "4px";
+  popup.appendChild(pvCap);
+
+  document.body.appendChild(popup);
+  bocal._popup = popup;
+
+  bocal.addEventListener("mouseenter", function() {
+    const rect = bocal.getBoundingClientRect();
+    popup.style.display = "block";
+    popup.style.top  = (rect.top  + window.pageYOffset - 10) + "px";
+    popup.style.left = (rect.right + window.pageXOffset + 10) + "px";
+  });
+
+  bocal.addEventListener("mouseleave", function() {
+    popup.style.display = "none";
+  });
+
   // --- GESTION DES CLICS (TOUTES FONCTIONS) ---
   let clickCount = 0;
   bocal.addEventListener("click", (e) => {
@@ -4564,6 +4618,7 @@ window.addEventListener('orientationchange', () => {
 window.addEventListener('load', () => {
   setTimeout(repositionnerTousBocaux, 100);
 });
+
 
 
 
