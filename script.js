@@ -2559,72 +2559,6 @@ function afficherParametre(bocalElem, keepObjectif = null, keepSimulation = null
     html += '</select>' +
       '</div>';
   }
-
-  // Si catégorie Goutte, afficher la composition (lecture seule)
-  if (currentCategorie === "Goutte") {
-    html += '<div id="composition_container" style="margin-bottom:12px;margin-top:20px;">' +
-      '<label style="display:block;margin-bottom:8px;font-weight:bold;color:#555;">Composition monétaire (lecture seule)</label>';
-    
-    monnaieValues.forEach(function(groupe, gIdx) {
-      const gridCols = groupe.values.length === 4 ? "repeat(4,1fr)" : groupe.values.length === 2 ? "repeat(2,1fr)" : "repeat(3,1fr)";
-      html += '<div style="margin-bottom:10px;padding:8px;background:#f9f9f9;border-radius:4px;">' +
-        '<div style="font-weight:bold;color:#666;margin-bottom:6px;font-size:13px;">' + groupe.groupe + '</div>' +
-        '<div style="display:grid;grid-template-columns:' + gridCols + ';gap:6px;">';
-      
-      groupe.values.forEach(function(v) {
-        const qty = currentComposition[v.label] || 0;
-        html += '<div style="display:flex;flex-direction:column;align-items:center;">' +
-          '<span style="font-size:12px;color:#666;margin-bottom:2px;">' + v.label + '</span>' +
-          '<input type="number" ' +
-                 'class="monnaie-input" ' +
-                 'data-label="' + v.label + '" ' +
-                 'data-value="' + v.value + '" ' +
-                 'value="' + qty + '" ' +
-                 'min="0" ' +
-                 'step="1"' +
-                 'style="width:100%;padding:4px;text-align:center;font-size:12px;background-color:#f5f5f5;border:1px solid #ddd;color:#666;" ' +
-                 'readonly>' +
-        '</div>';
-      });
-      
-      html += '</div></div>';
-    });
-    
-    // Calculer les totaux
-    let totalBillets = 0;
-    let totalPieces = 0;
-    Object.keys(currentComposition).forEach(function(label) {
-      const qty = currentComposition[label] || 0;
-      const valInfo = monnaieValues.flatMap(function(g) { return g.values; }).find(function(v) { return v.label === label; });
-      if (valInfo) {
-        const montant = qty * valInfo.value;
-        if (label === "5€" || label === "10€" || label === "20€" || label === "50€") {
-          totalBillets += montant;
-        } else {
-          totalPieces += montant;
-        }
-      }
-    });
-    const total = totalBillets + totalPieces;
-    
-    html += '<div style="margin-top:8px;padding:8px;background:#e8f5e9;border-radius:4px;">' +
-      '<div style="display:flex;justify-content:space-between;margin-bottom:4px;">' +
-        '<span style="color:#007BFF;font-weight:bold;">Billets:</span>' +
-        '<span style="color:#007BFF;font-weight:bold;">' + formatMoney(totalBillets) + '</span>' +
-      '</div>' +
-      '<div style="display:flex;justify-content:space-between;margin-bottom:4px;">' +
-        '<span style="color:#D79A10;font-weight:bold;">Pièces:</span>' +
-        '<span style="color:#D79A10;font-weight:bold;">' + formatMoney(totalPieces) + '</span>' +
-      '</div>' +
-      '<div style="display:flex;justify-content:space-between;border-top:1px solid #ccc;padding-top:4px;margin-top:4px;">' +
-        '<span style="color:#2ecc71;font-weight:bold;">Total:</span>' +
-        '<span style="color:#2ecc71;font-weight:bold;">' + formatMoney(total) + '</span>' +
-      '</div>' +
-    '</div></div>';
-  }
-
-  // Panel info capital
-  let infoHtml = '<div style="margin-top:20px;padding:8px;background:#e8f5e9;border-radius:4px;">';
   
   if (currentCategorie === "Goutte") {
     let totalBillets = 0, totalPieces = 0;
@@ -4653,6 +4587,7 @@ window.addEventListener('orientationchange', () => {
 window.addEventListener('load', () => {
   setTimeout(repositionnerTousBocaux, 100);
 });
+
 
 
 
