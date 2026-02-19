@@ -3821,7 +3821,8 @@ function loadBocaux(){
       const el = creerBocal(
         b.nom, b.volume, b.capital, b.objectif, b.simulation,
         b.left, b.top, b.zIndex, b.anchored,
-        b.id, b.investment, b.interest, true, b.categorie
+        b.id, b.investment, b.interest, true, b.categorie,
+        b.composition, b.xRatio, b.yRatio
       );
       el._investment = b.investment;
       el._interest   = b.interest;
@@ -4560,5 +4561,6 @@ window.addEventListener('orientationchange', () => {
 window.addEventListener('load', () => {
   setTimeout(repositionnerTousBocaux, 100);
 });
+
 
 
