@@ -2572,37 +2572,54 @@ function afficherParametre(bocalElem, keepObjectif = null, keepSimulation = null
       }
     });
     let infoHtml = '';
-  if (currentCategorie !== "Goutte") {
-    infoHtml = '<div style="margin-top:20px;padding:8px;background:#e8f5e9;border-radius:4px;">';
-    if (currentCategorie === "Fuite") {
-      const inv = (idx !== -1) ? (bocaux[idx].investment || 0) : 0;
-      infoHtml +=
-        '<div style="display:flex;justify-content:space-between;">' +
-          '<span style="color:#007BFF;font-weight:bold;">Investissement:</span>' +
-          '<span style="color:#007BFF;font-weight:bold;">' + formatMoney(inv) + '</span>' +
-        '</div>';
-    } else {
-      const inv  = (idx !== -1) ? (bocaux[idx].investment || 0) : 0;
-      const intr = (idx !== -1) ? (bocaux[idx].interest   || 0) : 0;
-      infoHtml +=
-        '<div style="display:flex;justify-content:space-between;margin-bottom:4px;">' +
-          '<span style="color:#007BFF;font-weight:bold;">Investissement:</span>' +
-          '<span style="color:#007BFF;font-weight:bold;">' + formatMoney(inv) + '</span>' +
-        '</div>' +
-        '<div style="display:flex;justify-content:space-between;margin-bottom:4px;">' +
-          '<span style="color:#D79A10;font-weight:bold;">Intérêts:</span>' +
-          '<span style="color:#D79A10;font-weight:bold;">' + formatMoney(intr) + '</span>' +
-        '</div>' +
-        '<div style="display:flex;justify-content:space-between;border-top:1px solid #ccc;padding-top:4px;margin-top:4px;">' +
-          '<span style="color:#2ecc71;font-weight:bold;">Capital:</span>' +
-          '<span style="color:#2ecc71;font-weight:bold;">' + formatMoney(inv + intr) + '</span>' +
-        '</div>';
-    }
-    infoHtml += '</div>';
+  if (currentCategorie === "Goutte") {
+    let totalBillets = 0, totalPieces = 0;
+    Object.keys(currentComposition).forEach(function(label) {
+      const qty = currentComposition[label] || 0;
+      const valInfo = monnaieValues.flatMap(function(g) { return g.values; }).find(function(v) { return v.label === label; });
+      if (valInfo) {
+        const montant = qty * valInfo.value;
+        if (label === "5€" || label === "10€" || label === "20€" || label === "50€") totalBillets += montant;
+        else totalPieces += montant;
+      }
+    });
+    infoHtml = '<div style="margin-top:20px;padding:8px;background:#e8f5e9;border-radius:4px;">' +
+      '<div style="display:flex;justify-content:space-between;margin-bottom:4px;">' +
+        '<span style="color:#007BFF;font-weight:bold;">Billets:</span>' +
+        '<span style="color:#007BFF;font-weight:bold;">' + formatMoney(totalBillets) + '</span>' +
+      '</div>' +
+      '<div style="display:flex;justify-content:space-between;margin-bottom:4px;">' +
+        '<span style="color:#D79A10;font-weight:bold;">Pièces:</span>' +
+        '<span style="color:#D79A10;font-weight:bold;">' + formatMoney(totalPieces) + '</span>' +
+      '</div>' +
+      '<div style="display:flex;justify-content:space-between;border-top:1px solid #ccc;padding-top:4px;margin-top:4px;">' +
+        '<span style="color:#2ecc71;font-weight:bold;">Total:</span>' +
+        '<span style="color:#2ecc71;font-weight:bold;">' + formatMoney(totalBillets + totalPieces) + '</span>' +
+      '</div></div>';
+  } else if (currentCategorie === "Fuite") {
+    const inv = (idx !== -1) ? (bocaux[idx].investment || 0) : 0;
+    infoHtml = '<div style="margin-top:20px;padding:8px;background:#e8f5e9;border-radius:4px;">' +
+      '<div style="display:flex;justify-content:space-between;">' +
+        '<span style="color:#007BFF;font-weight:bold;">Investissement:</span>' +
+        '<span style="color:#007BFF;font-weight:bold;">' + formatMoney(inv) + '</span>' +
+      '</div></div>';
+  } else {
+    const inv  = (idx !== -1) ? (bocaux[idx].investment || 0) : 0;
+    const intr = (idx !== -1) ? (bocaux[idx].interest   || 0) : 0;
+    infoHtml = '<div style="margin-top:20px;padding:8px;background:#e8f5e9;border-radius:4px;">' +
+      '<div style="display:flex;justify-content:space-between;margin-bottom:4px;">' +
+        '<span style="color:#007BFF;font-weight:bold;">Investissement:</span>' +
+        '<span style="color:#007BFF;font-weight:bold;">' + formatMoney(inv) + '</span>' +
+      '</div>' +
+      '<div style="display:flex;justify-content:space-between;margin-bottom:4px;">' +
+        '<span style="color:#D79A10;font-weight:bold;">Intérêts:</span>' +
+        '<span style="color:#D79A10;font-weight:bold;">' + formatMoney(intr) + '</span>' +
+      '</div>' +
+      '<div style="display:flex;justify-content:space-between;border-top:1px solid #ccc;padding-top:4px;margin-top:4px;">' +
+        '<span style="color:#2ecc71;font-weight:bold;">Capital:</span>' +
+        '<span style="color:#2ecc71;font-weight:bold;">' + formatMoney(inv + intr) + '</span>' +
+      '</div></div>';
   }
-
-  html += infoHtml;
-
   html += infoHtml;
   html += '<div style="text-align:center;margin-top:16px;">' +
         '<button id="validerParam" style="background:black;color:white;border:none;padding:8px 16px;border-radius:4px;cursor:pointer;">Valider</button>' +
@@ -4580,6 +4597,7 @@ window.addEventListener('orientationchange', () => {
 window.addEventListener('load', () => {
   setTimeout(repositionnerTousBocaux, 100);
 });
+
 
 
 
