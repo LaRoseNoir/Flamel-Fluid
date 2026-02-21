@@ -3082,7 +3082,7 @@ function afficherParametre(bocalElem, keepObjectif = null, keepSimulation = null
 let homePage, mainPage, monthPage;
 
   function createPages() {
-  // ─── PAGE MAIN (conteneurs bocaux) ───────────────────────────────────────
+  // ─── PAGE MAIN ───────────────────────────────────────────────────────────
   mainPage = document.createElement("div");
   mainPage.id = "mainPage";
   mainPage.style.display = "none";
@@ -3091,137 +3091,131 @@ let homePage, mainPage, monthPage;
   homePage = document.createElement("div");
   homePage.id = "homePage";
   Object.assign(homePage.style, {
-    display: "flex",
-    position: "fixed",
-    top: "0", left: "0",
-    width: "100%", height: "100%",
+    display:         "flex",
+    position:        "fixed",
+    top:             "0",
+    left:            "0",
+    width:           "100%",
+    height:          "100%",
     backgroundColor: "#f2f2f2",
-    zIndex: "30000",
-    flexDirection: "column",
-    alignItems: "center",
-    justifyContent: "center",
-    fontFamily: "Arial, sans-serif",
-    padding: "20px",
-    boxSizing: "border-box",
-    overflowY: "auto"
+    zIndex:          "30000",
+    flexDirection:   "column",
+    alignItems:      "center",
+    justifyContent:  "space-between",   // ← répartit sur toute la hauteur
+    fontFamily:      "Arial, sans-serif",
+    boxSizing:       "border-box",
+    padding:         "0"
   });
 
-  // ── Bloc logo + texte ──────────────────────────────────────────────────
-  const mainContainer = document.createElement("div");
-  mainContainer.id = "homeMainContainer";
-  Object.assign(mainContainer.style, {
-    display: "flex",
-    flexDirection: "row",
-    alignItems: "center",
+  // ── ZONE HAUTE : logo + titre ─────────────────────────────────────────────
+  const topZone = document.createElement("div");
+  topZone.id = "homeTopZone";
+  Object.assign(topZone.style, {
+    display:        "flex",
+    flex:           "1",               // prend la moitié de l'espace
+    flexDirection:  "column",
+    alignItems:     "center",
     justifyContent: "center",
-    width: "100%",
-    maxWidth: "700px",
-    marginBottom: "48px"
+    width:          "100%",
+    padding:        "32px 24px 16px",
+    boxSizing:      "border-box"
   });
 
-  // Logo
+  // Logo rond (comme une app icon)
   const logoContainer = document.createElement("div");
   logoContainer.id = "homeLogoContainer";
   Object.assign(logoContainer.style, {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    width: "120px",
-    height: "120px",
-    minWidth: "120px",
-    borderRadius: "20px",
+    display:         "flex",
+    alignItems:      "center",
+    justifyContent:  "center",
+    width:           "110px",
+    height:          "110px",
+    borderRadius:    "28px",
     backgroundColor: "white",
-    boxShadow: "0 4px 16px rgba(0,0,0,0.1)",
-    overflow: "hidden",
-    marginRight: "36px",
-    flexShrink: "0"
+    boxShadow:       "0 8px 24px rgba(0,0,0,0.12)",
+    overflow:        "hidden",
+    marginBottom:    "24px",
+    flexShrink:      "0"
   });
 
   const logoImg = document.createElement("img");
   logoImg.alt = "Logo Flamel Fluid";
   Object.assign(logoImg.style, {
-    maxWidth: "90px",
-    maxHeight: "90px",
-    display: "block"
+    width:  "72px",
+    height: "72px",
+    display: "block",
+    objectFit: "contain"
   });
 
-  // Chercher le logo
   const tryFiles = ["Logo.png","Logo.jpg","Logo.jpeg","Logo.svg","Logo.gif",
                     "logo.png","logo.jpg","logo.jpeg","logo.svg","logo.gif"];
   let tryIndex = 0;
   function tryNextLogoHome() {
     if (tryIndex >= tryFiles.length) {
       logoImg.style.display = "none";
-      const placeholder = document.createElement("div");
-      placeholder.innerHTML = "💧";
-      Object.assign(placeholder.style, {
-        fontSize: "56px",
-        display: "flex", alignItems: "center", justifyContent: "center",
+      const ph = document.createElement("div");
+      ph.innerHTML = "💧";
+      Object.assign(ph.style, {
+        fontSize: "52px", display: "flex",
+        alignItems: "center", justifyContent: "center",
         width: "100%", height: "100%"
       });
-      logoContainer.appendChild(placeholder);
+      logoContainer.appendChild(ph);
       return;
     }
     const file = tryFiles[tryIndex++];
     const tester = new Image();
-    tester.onload = function () {
-      logoImg.src = file;
-      logoImg.style.display = "block";
-    };
+    tester.onload = () => { logoImg.src = file; logoImg.style.display = "block"; };
     tester.onerror = tryNextLogoHome;
     tester.src = file;
   }
   tryNextLogoHome();
   logoContainer.appendChild(logoImg);
 
-  // Texte titre + slogan
-  const textContainer = document.createElement("div");
-  textContainer.id = "homeTextContainer";
-  Object.assign(textContainer.style, {
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "flex-start",
-    justifyContent: "center"
-  });
-
+  // Titre
   const appName = document.createElement("h1");
   appName.id = "homeAppName";
   appName.textContent = "Flamel Fluid";
   Object.assign(appName.style, {
-    fontSize: "48px",
-    color: "#333",
-    fontWeight: "bold",
-    margin: "0 0 10px 0",
-    letterSpacing: "1px",
-    lineHeight: "1.1"
+    fontSize:    "40px",
+    color:       "#1a1a1a",
+    fontWeight:  "800",
+    margin:      "0 0 8px 0",
+    textAlign:   "center",
+    letterSpacing: "0.5px",
+    lineHeight:  "1.1"
   });
 
+  // Slogan
   const appSubtitle = document.createElement("p");
   appSubtitle.id = "homeAppSubtitle";
   appSubtitle.textContent = "Fluidifier votre patrimoine";
   Object.assign(appSubtitle.style, {
-    fontSize: "18px",
-    color: "#666",
-    margin: "0",
-    lineHeight: "1.4",
-    fontStyle: "italic"
+    fontSize:   "15px",
+    color:      "#888",
+    margin:     "0",
+    textAlign:  "center",
+    fontStyle:  "italic",
+    lineHeight: "1.4"
   });
 
-  textContainer.appendChild(appName);
-  textContainer.appendChild(appSubtitle);
-  mainContainer.appendChild(logoContainer);
-  mainContainer.appendChild(textContainer);
+  topZone.appendChild(logoContainer);
+  topZone.appendChild(appName);
+  topZone.appendChild(appSubtitle);
 
-  // ── Boutons ────────────────────────────────────────────────────────────
-  const buttonsContainer = document.createElement("div");
-  buttonsContainer.id = "homeButtonsContainer";
-  Object.assign(buttonsContainer.style, {
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    gap: "16px",
-    width: "100%",
-    maxWidth: "320px"
+  // ── ZONE BASSE : boutons ──────────────────────────────────────────────────
+  const bottomZone = document.createElement("div");
+  bottomZone.id = "homeBottomZone";
+  Object.assign(bottomZone.style, {
+    display:        "flex",
+    flex:           "1",               // prend l'autre moitié
+    flexDirection:  "column",
+    alignItems:     "center",
+    justifyContent: "center",
+    width:          "100%",
+    padding:        "16px 24px 48px",
+    boxSizing:      "border-box",
+    gap:            "16px"
   });
 
   function createHomeButton(label, onClick) {
@@ -3229,97 +3223,97 @@ let homePage, mainPage, monthPage;
     btn.textContent = label;
     btn.className = "home-button";
     Object.assign(btn.style, {
-      padding: "16px 32px",
-      fontSize: "20px",
-      backgroundColor: "black",
-      color: "white",
-      border: "none",
-      borderRadius: "12px",
-      cursor: "pointer",
-      fontWeight: "bold",
-      width: "100%",
-      boxShadow: "0 4px 8px rgba(0,0,0,0.2)",
-      transition: "all 0.2s ease",
-      letterSpacing: "1px",
-      WebkitTapHighlightColor: "transparent",
-      touchAction: "manipulation"
+      display:                  "block",
+      width:                    "100%",
+      maxWidth:                 "340px",
+      padding:                  "20px 32px",
+      fontSize:                 "20px",
+      fontWeight:               "700",
+      color:                    "white",
+      backgroundColor:          "black",
+      border:                   "none",
+      borderRadius:             "16px",
+      cursor:                   "pointer",
+      letterSpacing:            "0.5px",
+      boxShadow:                "0 4px 12px rgba(0,0,0,0.18)",
+      transition:               "all 0.18s ease",
+      WebkitTapHighlightColor:  "transparent",
+      touchAction:              "manipulation"
     });
     btn.addEventListener("click", onClick);
     btn.addEventListener("mouseenter", () => {
-      btn.style.backgroundColor = "#333";
-      btn.style.transform = "translateY(-2px)";
-      btn.style.boxShadow = "0 6px 12px rgba(0,0,0,0.25)";
+      btn.style.backgroundColor = "#222";
+      btn.style.transform       = "translateY(-2px)";
+      btn.style.boxShadow       = "0 8px 20px rgba(0,0,0,0.22)";
     });
     btn.addEventListener("mouseleave", () => {
       btn.style.backgroundColor = "black";
-      btn.style.transform = "translateY(0)";
-      btn.style.boxShadow = "0 4px 8px rgba(0,0,0,0.2)";
+      btn.style.transform       = "translateY(0)";
+      btn.style.boxShadow       = "0 4px 12px rgba(0,0,0,0.18)";
     });
     btn.addEventListener("mousedown",  () => {
       btn.style.transform = "translateY(1px)";
-      btn.style.boxShadow = "0 2px 4px rgba(0,0,0,0.2)";
+      btn.style.boxShadow = "0 2px 6px rgba(0,0,0,0.18)";
     });
     return btn;
   }
 
-  buttonsContainer.appendChild(createHomeButton("Main",   goToMain));
-  buttonsContainer.appendChild(createHomeButton("Month",  goToMonth));
-  buttonsContainer.appendChild(createHomeButton("Matrix", () => {
+  bottomZone.appendChild(createHomeButton("Main",   goToMain));
+  bottomZone.appendChild(createHomeButton("Month",  goToMonth));
+  bottomZone.appendChild(createHomeButton("Matrix", () =>
     window.open(
       "https://docs.google.com/spreadsheets/d/1X0qlMK5ycdvhQ66kEA14vLbnwD0cLkbHguSKiNmnkDI/edit?usp=sharing",
       "_blank"
-    );
-  }));
+    )
+  ));
 
-  homePage.appendChild(mainContainer);
-  homePage.appendChild(buttonsContainer);
+  homePage.appendChild(topZone);
+  homePage.appendChild(bottomZone);
   document.body.appendChild(homePage);
 
-  // ── Responsive : adapte la mise en page selon la largeur ──────────────
+  // ── Responsive dynamique ──────────────────────────────────────────────────
   function applyHomeResponsive() {
     const w = window.innerWidth;
-    const isMobile  = w <= 480;
-    const isTablet  = w <= 768 && w > 480;
-
-    // Layout logo+texte : colonne sur mobile, ligne sinon
-    mainContainer.style.flexDirection  = isMobile ? "column" : "row";
-    mainContainer.style.textAlign      = isMobile ? "center" : "left";
-    mainContainer.style.marginBottom   = isMobile ? "32px" : "48px";
+    const h = window.innerHeight;
+    const isSmallPhone = w <= 360;
+    const isMobile     = w <= 480;
+    const isLandscape  = w > h;
 
     // Logo
-    const logoSize = isMobile ? "90px" : isTablet ? "100px" : "120px";
-    logoContainer.style.width    = logoSize;
-    logoContainer.style.height   = logoSize;
-    logoContainer.style.minWidth = logoSize;
-    logoContainer.style.marginRight  = isMobile ? "0"    : "36px";
-    logoContainer.style.marginBottom = isMobile ? "20px" : "0";
-    logoImg.style.maxWidth  = isMobile ? "60px" : isTablet ? "70px" : "90px";
-    logoImg.style.maxHeight = logoImg.style.maxWidth;
+    const logoSize = isSmallPhone ? "88px" : isMobile ? "100px" : "120px";
+    logoContainer.style.width         = logoSize;
+    logoContainer.style.height        = logoSize;
+    logoContainer.style.borderRadius  = isMobile ? "22px" : "28px";
+    logoContainer.style.marginBottom  = isLandscape ? "12px" : "24px";
+    const imgSize = isSmallPhone ? "56px" : isMobile ? "64px" : "80px";
+    logoImg.style.width  = imgSize;
+    logoImg.style.height = imgSize;
 
-    // Titre
-    appName.style.fontSize   = isMobile ? "32px" : isTablet ? "38px" : "48px";
-    appName.style.textAlign  = isMobile ? "center" : "left";
-    appName.style.margin     = isMobile ? "0 0 8px 0" : "0 0 10px 0";
+    // Titre / slogan
+    appName.style.fontSize    = isSmallPhone ? "28px" : isMobile ? "34px" : "42px";
+    appSubtitle.style.fontSize = isSmallPhone ? "13px" : isMobile ? "14px" : "16px";
 
-    // Slogan
-    appSubtitle.style.fontSize  = isMobile ? "14px" : isTablet ? "16px" : "18px";
-    appSubtitle.style.textAlign = isMobile ? "center" : "left";
-
-    // Alignement du bloc texte
-    textContainer.style.alignItems = isMobile ? "center" : "flex-start";
+    // Zones : en paysage mobile, on passe en row
+    if (isLandscape && isMobile) {
+      homePage.style.flexDirection = "row";
+      topZone.style.padding    = "16px";
+      bottomZone.style.padding = "16px";
+    } else {
+      homePage.style.flexDirection = "column";
+      topZone.style.padding    = isSmallPhone ? "24px 16px 12px" : "32px 24px 16px";
+      bottomZone.style.padding = isSmallPhone ? "12px 16px 36px" : "16px 24px 48px";
+    }
 
     // Boutons
-    const btnFontSize = isMobile ? "17px" : "20px";
-    const btnPadding  = isMobile ? "14px 24px" : "16px 32px";
-    buttonsContainer.style.gap      = isMobile ? "12px" : "16px";
-    buttonsContainer.style.maxWidth = isMobile ? "280px" : "320px";
-    buttonsContainer.querySelectorAll(".home-button").forEach(btn => {
-      btn.style.fontSize = btnFontSize;
-      btn.style.padding  = btnPadding;
+    const btnFontSize = isSmallPhone ? "17px" : isMobile ? "19px" : "20px";
+    const btnPadding  = isSmallPhone ? "16px 24px" : isMobile ? "18px 28px" : "20px 32px";
+    const btnRadius   = isMobile ? "14px" : "16px";
+    bottomZone.style.gap = isSmallPhone ? "12px" : "16px";
+    bottomZone.querySelectorAll(".home-button").forEach(btn => {
+      btn.style.fontSize     = btnFontSize;
+      btn.style.padding      = btnPadding;
+      btn.style.borderRadius = btnRadius;
     });
-
-    // Padding général de la page
-    homePage.style.padding = isMobile ? "24px 16px" : "20px";
   }
 
   applyHomeResponsive();
@@ -4541,4 +4535,5 @@ window.addEventListener('orientationchange', () => {
 window.addEventListener('load', () => {
   setTimeout(repositionnerTousBocaux, 100);
 });
+
 
