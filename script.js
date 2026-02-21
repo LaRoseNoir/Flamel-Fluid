@@ -3082,293 +3082,250 @@ function afficherParametre(bocalElem, keepObjectif = null, keepSimulation = null
 let homePage, mainPage, monthPage;
 
   function createPages() {
-  // Page principale (conteneurs)
+  // ─── PAGE MAIN (conteneurs bocaux) ───────────────────────────────────────
   mainPage = document.createElement("div");
   mainPage.id = "mainPage";
   mainPage.style.display = "none";
-  
-  // Page home
+
+  // ─── PAGE HOME ────────────────────────────────────────────────────────────
   homePage = document.createElement("div");
   homePage.id = "homePage";
   Object.assign(homePage.style, {
     display: "flex",
     position: "fixed",
-    top: "0",
-    left: "0",
-    width: "100%",
-    height: "100%",
+    top: "0", left: "0",
+    width: "100%", height: "100%",
     backgroundColor: "#f2f2f2",
-    zIndex: 30000,
+    zIndex: "30000",
     flexDirection: "column",
     alignItems: "center",
-    justifyContent: "center", // Centrer verticalement
-    fontFamily: "Arial, sans-serif"
+    justifyContent: "center",
+    fontFamily: "Arial, sans-serif",
+    padding: "20px",
+    boxSizing: "border-box",
+    overflowY: "auto"
   });
-  
-  // Conteneur principal pour logo + titre + slogan
+
+  // ── Bloc logo + texte ──────────────────────────────────────────────────
   const mainContainer = document.createElement("div");
+  mainContainer.id = "homeMainContainer";
   Object.assign(mainContainer.style, {
     display: "flex",
-    flexDirection: "row", // Logo à gauche, texte à droite
+    flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: "60px",
     width: "100%",
     maxWidth: "700px",
-    padding: "0 20px"
+    marginBottom: "48px"
   });
-  
+
   // Logo
   const logoContainer = document.createElement("div");
+  logoContainer.id = "homeLogoContainer";
   Object.assign(logoContainer.style, {
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    width: "140px",
-    height: "140px",
+    width: "120px",
+    height: "120px",
+    minWidth: "120px",
     borderRadius: "20px",
     backgroundColor: "white",
     boxShadow: "0 4px 16px rgba(0,0,0,0.1)",
     overflow: "hidden",
-    marginRight: "40px",
+    marginRight: "36px",
     flexShrink: "0"
   });
-  
+
   const logoImg = document.createElement("img");
   logoImg.alt = "Logo Flamel Fluid";
   Object.assign(logoImg.style, {
-    maxWidth: "100px",
-    maxHeight: "100px",
+    maxWidth: "90px",
+    maxHeight: "90px",
     display: "block"
   });
-  
-  // Chercher le logo dans le même dossier
-  const tryFiles = ["Logo.png", "Logo.jpg", "Logo.jpeg", "Logo.svg", "Logo.gif", "logo.png", "logo.jpg", "logo.jpeg", "logo.svg", "logo.gif"];
-  let tryIndex = 0;
 
+  // Chercher le logo
+  const tryFiles = ["Logo.png","Logo.jpg","Logo.jpeg","Logo.svg","Logo.gif",
+                    "logo.png","logo.jpg","logo.jpeg","logo.svg","logo.gif"];
+  let tryIndex = 0;
   function tryNextLogoHome() {
     if (tryIndex >= tryFiles.length) {
-      // Si aucun logo trouvé, utiliser un placeholder stylé
       logoImg.style.display = "none";
       const placeholder = document.createElement("div");
       placeholder.innerHTML = "💧";
       Object.assign(placeholder.style, {
-        fontSize: "64px",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        width: "100%",
-        height: "100%"
+        fontSize: "56px",
+        display: "flex", alignItems: "center", justifyContent: "center",
+        width: "100%", height: "100%"
       });
       logoContainer.appendChild(placeholder);
       return;
     }
-    
     const file = tryFiles[tryIndex++];
-    const path = file; // Utiliser le chemin relatif (même dossier)
-    
     const tester = new Image();
-    tester.onload = function() {
-      logoImg.src = path;
+    tester.onload = function () {
+      logoImg.src = file;
       logoImg.style.display = "block";
-      const ph = logoContainer.querySelector(".logo-placeholder");
-      if (ph) ph.remove();
     };
-    tester.onerror = function() {
-      tryNextLogoHome();
-    };
-    tester.src = path;
+    tester.onerror = tryNextLogoHome;
+    tester.src = file;
   }
-
   tryNextLogoHome();
-  
   logoContainer.appendChild(logoImg);
-  
-  // Conteneur pour le titre et le slogan (à droite du logo)
+
+  // Texte titre + slogan
   const textContainer = document.createElement("div");
+  textContainer.id = "homeTextContainer";
   Object.assign(textContainer.style, {
     display: "flex",
     flexDirection: "column",
     alignItems: "flex-start",
     justifyContent: "center"
   });
-  
-  // Nom de l'application
+
   const appName = document.createElement("h1");
+  appName.id = "homeAppName";
   appName.textContent = "Flamel Fluid";
   Object.assign(appName.style, {
     fontSize: "48px",
     color: "#333",
     fontWeight: "bold",
-    margin: "0 0 12px 0",
-    textAlign: "left",
-    letterSpacing: "1px"
+    margin: "0 0 10px 0",
+    letterSpacing: "1px",
+    lineHeight: "1.1"
   });
-  
-  // Nouveau slogan plus percutant
+
   const appSubtitle = document.createElement("p");
+  appSubtitle.id = "homeAppSubtitle";
   appSubtitle.textContent = "Fluidifier votre patrimoine";
   Object.assign(appSubtitle.style, {
-    fontSize: "20px",
+    fontSize: "18px",
     color: "#666",
     margin: "0",
-    textAlign: "left",
-    maxWidth: "400px",
     lineHeight: "1.4",
     fontStyle: "italic"
   });
-  
+
   textContainer.appendChild(appName);
   textContainer.appendChild(appSubtitle);
-  
   mainContainer.appendChild(logoContainer);
   mainContainer.appendChild(textContainer);
-  
-  // Zone des boutons en bas
+
+  // ── Boutons ────────────────────────────────────────────────────────────
   const buttonsContainer = document.createElement("div");
+  buttonsContainer.id = "homeButtonsContainer";
   Object.assign(buttonsContainer.style, {
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
-    justifyContent: "center",
-    gap: "20px",
+    gap: "16px",
     width: "100%",
     maxWidth: "320px"
   });
-  
-  // Bouton Main
-  const mainButton = document.createElement("button");
-  mainButton.textContent = "Main";
-  mainButton.className = "home-button main-button";
-  Object.assign(mainButton.style, {
-    padding: "18px 36px",
-    fontSize: "22px",
-    backgroundColor: "black",
-    color: "white",
-    border: "none",
-    borderRadius: "12px",
-    cursor: "pointer",
-    fontWeight: "bold",
-    width: "100%",
-    boxShadow: "0 4px 8px rgba(0,0,0,0.2)",
-    transition: "all 0.3s ease",
-    letterSpacing: "1px"
-  });
-  
-  mainButton.addEventListener("click", function() {
-    goToMain();
-  });
-  
-  mainButton.addEventListener("mouseenter", function() {
-    mainButton.style.backgroundColor = "#333";
-    mainButton.style.transform = "translateY(-2px)";
-    mainButton.style.boxShadow = "0 6px 12px rgba(0,0,0,0.25)";
-  });
-  
-  mainButton.addEventListener("mouseleave", function() {
-    mainButton.style.backgroundColor = "black";
-    mainButton.style.transform = "translateY(0)";
-    mainButton.style.boxShadow = "0 4px 8px rgba(0,0,0,0.2)";
-  });
-  
-  mainButton.addEventListener("mousedown", function() {
-    mainButton.style.transform = "translateY(1px)";
-    mainButton.style.boxShadow = "0 2px 4px rgba(0,0,0,0.2)";
-  });
-  
-  // Bouton Month
-  const monthButton = document.createElement("button");
-  monthButton.textContent = "Month";
-  monthButton.className = "home-button month-button";
-  Object.assign(monthButton.style, {
-    padding: "18px 36px",
-    fontSize: "22px",
-    backgroundColor: "black",
-    color: "white",
-    border: "none",
-    borderRadius: "12px",
-    cursor: "pointer",
-    fontWeight: "bold",
-    width: "100%",
-    boxShadow: "0 4px 8px rgba(0,0,0,0.2)",
-    transition: "all 0.3s ease",
-    letterSpacing: "1px"
-  });
-  
-  monthButton.addEventListener("click", function() {
-    goToMonth();
-  });
-  
-  monthButton.addEventListener("mouseenter", function() {
-    monthButton.style.backgroundColor = "#333";
-    monthButton.style.transform = "translateY(-2px)";
-    monthButton.style.boxShadow = "0 6px 12px rgba(0,0,0,0.25)";
-  });
-  
-  monthButton.addEventListener("mouseleave", function() {
-    monthButton.style.backgroundColor = "black";
-    monthButton.style.transform = "translateY(0)";
-    monthButton.style.boxShadow = "0 4px 8px rgba(0,0,0,0.2)";
-  });
-  
-  monthButton.addEventListener("mousedown", function() {
-    monthButton.style.transform = "translateY(1px)";
-    monthButton.style.boxShadow = "0 2px 4px rgba(0,0,0,0.2)";
-  });
-  
-  // Bouton Matrix
-  const matrixButton = document.createElement("button");
-  matrixButton.textContent = "Matrix";
-  matrixButton.className = "home-button matrix-button";
-  Object.assign(matrixButton.style, {
-    padding: "18px 36px",
-    fontSize: "22px",
-    backgroundColor: "black",
-    color: "white",
-    border: "none",
-    borderRadius: "12px",
-    cursor: "pointer",
-    fontWeight: "bold",
-    width: "100%",
-    boxShadow: "0 4px 8px rgba(0,0,0,0.2)",
-    transition: "all 0.3s ease",
-    letterSpacing: "1px"
-  });
-  
-  matrixButton.addEventListener("click", function() {
-    // Ouvrir la feuille Google Sheets dans un nouvel onglet
-    window.open("https://docs.google.com/spreadsheets/d/1X0qlMK5ycdvhQ66kEA14vLbnwD0cLkbHguSKiNmnkDI/edit?usp=sharing", "_blank");
-  });
-  
-  matrixButton.addEventListener("mouseenter", function() {
-    matrixButton.style.backgroundColor = "#333";
-    matrixButton.style.transform = "translateY(-2px)";
-    matrixButton.style.boxShadow = "0 6px 12px rgba(0,0,0,0.25)";
-  });
-  
-  matrixButton.addEventListener("mouseleave", function() {
-    matrixButton.style.backgroundColor = "black";
-    matrixButton.style.transform = "translateY(0)";
-    matrixButton.style.boxShadow = "0 4px 8px rgba(0,0,0,0.2)";
-  });
-  
-  matrixButton.addEventListener("mousedown", function() {
-    matrixButton.style.transform = "translateY(1px)";
-    matrixButton.style.boxShadow = "0 2px 4px rgba(0,0,0,0.2)";
-  });
-  
-  // Assembler les boutons (SUPPRIMER la phrase d'information)
-  buttonsContainer.appendChild(mainButton);
-  buttonsContainer.appendChild(monthButton);
-  buttonsContainer.appendChild(matrixButton);
-  // Supprimé: buttonsContainer.appendChild(infoText);
-  
-  // Ajouter tout au Home
+
+  function createHomeButton(label, onClick) {
+    const btn = document.createElement("button");
+    btn.textContent = label;
+    btn.className = "home-button";
+    Object.assign(btn.style, {
+      padding: "16px 32px",
+      fontSize: "20px",
+      backgroundColor: "black",
+      color: "white",
+      border: "none",
+      borderRadius: "12px",
+      cursor: "pointer",
+      fontWeight: "bold",
+      width: "100%",
+      boxShadow: "0 4px 8px rgba(0,0,0,0.2)",
+      transition: "all 0.2s ease",
+      letterSpacing: "1px",
+      WebkitTapHighlightColor: "transparent",
+      touchAction: "manipulation"
+    });
+    btn.addEventListener("click", onClick);
+    btn.addEventListener("mouseenter", () => {
+      btn.style.backgroundColor = "#333";
+      btn.style.transform = "translateY(-2px)";
+      btn.style.boxShadow = "0 6px 12px rgba(0,0,0,0.25)";
+    });
+    btn.addEventListener("mouseleave", () => {
+      btn.style.backgroundColor = "black";
+      btn.style.transform = "translateY(0)";
+      btn.style.boxShadow = "0 4px 8px rgba(0,0,0,0.2)";
+    });
+    btn.addEventListener("mousedown",  () => {
+      btn.style.transform = "translateY(1px)";
+      btn.style.boxShadow = "0 2px 4px rgba(0,0,0,0.2)";
+    });
+    return btn;
+  }
+
+  buttonsContainer.appendChild(createHomeButton("Main",   goToMain));
+  buttonsContainer.appendChild(createHomeButton("Month",  goToMonth));
+  buttonsContainer.appendChild(createHomeButton("Matrix", () => {
+    window.open(
+      "https://docs.google.com/spreadsheets/d/1X0qlMK5ycdvhQ66kEA14vLbnwD0cLkbHguSKiNmnkDI/edit?usp=sharing",
+      "_blank"
+    );
+  }));
+
   homePage.appendChild(mainContainer);
   homePage.appendChild(buttonsContainer);
   document.body.appendChild(homePage);
-  
-  // Créer la page Month
+
+  // ── Responsive : adapte la mise en page selon la largeur ──────────────
+  function applyHomeResponsive() {
+    const w = window.innerWidth;
+    const isMobile  = w <= 480;
+    const isTablet  = w <= 768 && w > 480;
+
+    // Layout logo+texte : colonne sur mobile, ligne sinon
+    mainContainer.style.flexDirection  = isMobile ? "column" : "row";
+    mainContainer.style.textAlign      = isMobile ? "center" : "left";
+    mainContainer.style.marginBottom   = isMobile ? "32px" : "48px";
+
+    // Logo
+    const logoSize = isMobile ? "90px" : isTablet ? "100px" : "120px";
+    logoContainer.style.width    = logoSize;
+    logoContainer.style.height   = logoSize;
+    logoContainer.style.minWidth = logoSize;
+    logoContainer.style.marginRight  = isMobile ? "0"    : "36px";
+    logoContainer.style.marginBottom = isMobile ? "20px" : "0";
+    logoImg.style.maxWidth  = isMobile ? "60px" : isTablet ? "70px" : "90px";
+    logoImg.style.maxHeight = logoImg.style.maxWidth;
+
+    // Titre
+    appName.style.fontSize   = isMobile ? "32px" : isTablet ? "38px" : "48px";
+    appName.style.textAlign  = isMobile ? "center" : "left";
+    appName.style.margin     = isMobile ? "0 0 8px 0" : "0 0 10px 0";
+
+    // Slogan
+    appSubtitle.style.fontSize  = isMobile ? "14px" : isTablet ? "16px" : "18px";
+    appSubtitle.style.textAlign = isMobile ? "center" : "left";
+
+    // Alignement du bloc texte
+    textContainer.style.alignItems = isMobile ? "center" : "flex-start";
+
+    // Boutons
+    const btnFontSize = isMobile ? "17px" : "20px";
+    const btnPadding  = isMobile ? "14px 24px" : "16px 32px";
+    buttonsContainer.style.gap      = isMobile ? "12px" : "16px";
+    buttonsContainer.style.maxWidth = isMobile ? "280px" : "320px";
+    buttonsContainer.querySelectorAll(".home-button").forEach(btn => {
+      btn.style.fontSize = btnFontSize;
+      btn.style.padding  = btnPadding;
+    });
+
+    // Padding général de la page
+    homePage.style.padding = isMobile ? "24px 16px" : "20px";
+  }
+
+  applyHomeResponsive();
+  window.addEventListener("resize", applyHomeResponsive);
+
+  // ─── PAGE MONTH ───────────────────────────────────────────────────────────
   createMonthPage();
 }
 
@@ -4584,3 +4541,4 @@ window.addEventListener('orientationchange', () => {
 window.addEventListener('load', () => {
   setTimeout(repositionnerTousBocaux, 100);
 });
+
