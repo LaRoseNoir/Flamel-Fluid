@@ -2558,20 +2558,7 @@ function afficherParametre(bocalElem, keepObjectif = null, keepSimulation = null
     
     html += '</select>' +
       '</div>';
-  }
-  
-  if (currentCategorie === "Goutte") {
-    let totalBillets = 0, totalPieces = 0;
-    Object.keys(currentComposition).forEach(function(label) {
-      const qty = currentComposition[label] || 0;
-      const valInfo = monnaieValues.flatMap(function(g) { return g.values; }).find(function(v) { return v.label === label; });
-      if (valInfo) {
-        const montant = qty * valInfo.value;
-        if (label === "5€" || label === "10€" || label === "20€" || label === "50€") totalBillets += montant;
-        else totalPieces += montant;
-      }
-    });
-    let infoHtml = '';
+  }let infoHtml = '';
   if (currentCategorie === "Goutte") {
     let totalBillets = 0, totalPieces = 0;
     Object.keys(currentComposition).forEach(function(label) {
@@ -4597,13 +4584,3 @@ window.addEventListener('orientationchange', () => {
 window.addEventListener('load', () => {
   setTimeout(repositionnerTousBocaux, 100);
 });
-
-
-
-
-
-
-
-
-
-
