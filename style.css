@@ -541,152 +541,124 @@ body {
 }
 
 /* ==========================================
-   MOBILE — max-width: 600px
+   ADAPTATION MOBILE & TABLETTE
    ========================================== */
+
+/* --- Fenêtre modale → Bottom Sheet sur mobile --- */
 @media (max-width: 600px) {
-
-  /* Header : textes plus petits et tronqués */
-  #patrimoineDisplay {
-    font-size: 11px !important;
-    top: 8px !important;
-  }
-  #patrimoineViseDisplay {
-    font-size: 11px !important;
-    top: 28px !important;
-  }
-  #patrimoineSimuleDisplay {
-    font-size: 11px !important;
-    top: 48px !important;
-  }
-
-  /* Logo plus petit */
-  #logoDisplay img {
-    max-width: 44px !important;
-    max-height: 44px !important;
-  }
-
-  /* Fenêtre modale plein écran sur très petits écrans */
   #fenetre {
-    width: calc(100vw - 12px) !important;
-    max-height: calc(100vh - 24px) !important;
-    padding: 12px;
-    border-radius: 8px;
+    position: fixed !important;
+    top: auto !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    transform: none !important;
+    width: 100% !important;
+    max-height: 90vh !important;
+    overflow-y: auto !important;
+    border-radius: 18px 18px 0 0 !important;
+    border: none !important;
+    padding: 20px 16px !important;
+    box-shadow: 0 -4px 30px rgba(0,0,0,0.2) !important;
+    cursor: default !important;
   }
 
-  /* Grille composition 3 colonnes au lieu de 4 */
-  .composition-grid {
-    grid-template-columns: repeat(3, 1fr) !important;
+  /* Drag handle visuel */
+  #fenetreHeader::before {
+    content: "";
+    display: block;
+    width: 40px;
+    height: 4px;
+    background: #ddd;
+    border-radius: 2px;
+    margin: -8px auto 12px auto;
   }
 
-  /* Sélection versement : empiler sur mobile */
-  #dynamicContainer .select-sortie,
-  #dynamicContainer .select-entree {
-    min-width: 90px;
+  /* Inputs plus grands pour les doigts */
+  .champ input,
+  .champ select {
+    padding: 12px 10px !important;
+    font-size: 16px !important; /* Évite le zoom auto iOS */
+    min-height: 44px !important;
   }
 
-  /* Stats graphique : 2 colonnes */
+  #validerBtn {
+    padding: 14px 20px !important;
+    font-size: 17px !important;
+    width: 100% !important;
+    margin-top: 20px !important;
+    min-height: 50px !important;
+  }
+
+  /* --- Menu contextuel → Centré en bas --- */
+  .menu-contextuel {
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    top: auto !important;
+    width: 100% !important;
+    border-radius: 18px 18px 0 0 !important;
+    border: none !important;
+    padding: 12px 0 env(safe-area-inset-bottom, 16px) 0 !important;
+    box-shadow: 0 -4px 30px rgba(0,0,0,0.15) !important;
+    z-index: 50000 !important;
+  }
+
+  .menu-contextuel button {
+    padding: 16px 20px !important;
+    font-size: 17px !important;
+    border-bottom: 1px solid #f0f0f0 !important;
+    min-height: 50px !important;
+  }
+
+  /* --- Header compact --- */
+  #header {
+    padding: 6px 10px !important;
+  }
+
+  /* --- Logo plus petit --- */
+  #logoDisplay img {
+    max-width: 42px !important;
+    max-height: 42px !important;
+  }
+
+  /* --- Bocaux : pas de scale (décale les hit zones) --- */
+  .bocal {
+    transform: none !important;
+  }
+
+  /* --- Graphique plein écran --- */
+  #graphiqueFenetre {
+    width: 100% !important;
+    height: 100% !important;
+    left: 0 !important;
+    top: 0 !important;
+    border-radius: 0 !important;
+    transform: none !important;
+  }
+
   #graphiqueStats {
     grid-template-columns: repeat(2, 1fr) !important;
+    gap: 6px !important;
   }
 
-  /* Contrôles graphique : empiler */
   #graphiqueControls {
-    flex-direction: column;
-    align-items: stretch;
-  }
-  #graphiqueControls button {
-    width: 100%;
-    text-align: center;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 8px !important;
   }
 
-  /* Menu contextuel plus large et boutons plus hauts */
-  .menu-contextuel {
-    width: 180px;
-  }
-  .menu-contextuel button {
-    padding: 13px 16px !important;
+  #graphiqueControls button {
+    width: 100% !important;
+    padding: 12px !important;
     font-size: 15px !important;
   }
 
-  /* Mission en bas : plus petite */
-  #missionDisplay {
-    font-size: 11px !important;
-  }
-
-  /* Bouton graphique : plus petit, ne cache pas les bocaux */
+  /* --- Bouton graphique --- */
   #graphiqueBtn {
-    width: 48px;
-    height: 48px;
-    font-size: 22px;
-    bottom: 12px;
-    right: 12px;
+    bottom: env(safe-area-inset-bottom, 16px) !important;
+    right: 16px !important;
   }
 }
 
-/* ==========================================
-   TRÈS PETIT ÉCRAN — max-width: 380px
-   ========================================== */
-@media (max-width: 380px) {
-
-  #patrimoineDisplay,
-  #patrimoineViseDisplay,
-  #patrimoineSimuleDisplay {
-    font-size: 10px !important;
-    max-width: calc(100vw - 70px) !important;
-  }
-
-  #patrimoineDisplay  { top: 6px !important; }
-  #patrimoineViseDisplay { top: 23px !important; }
-  #patrimoineSimuleDisplay { top: 40px !important; }
-
-  #header {
-    min-height: 60px;
-  }
-
-  .composition-grid {
-    grid-template-columns: repeat(2, 1fr) !important;
-  }
-
-  #fenetreHeader h3 {
-    font-size: 15px;
-  }
-}
-
-/* ==========================================
-   PAYSAGE MOBILE — orientation: landscape
-   ========================================== */
-@media (max-height: 500px) and (orientation: landscape) {
-
-  #patrimoineDisplay,
-  #patrimoineViseDisplay,
-  #patrimoineSimuleDisplay {
-    font-size: 10px !important;
-  }
-
-  #graphiqueContainer {
-    height: clamp(120px, 30vh, 200px);
-  }
-
-  #graphiqueStats {
-    grid-template-columns: repeat(3, 1fr) !important;
-  }
-
-  #graphiqueFenetre {
-    height: calc(100vh - 12px);
-    overflow-y: auto;
-  }
-}
-
-/* ==========================================
-   TABLETTE — 601px à 900px
-   ========================================== */
-@media (min-width: 601px) and (max-width: 900px) {
-
-  #patrimoineDisplay  { font-size: 13px !important; }
-  #patrimoineViseDisplay { font-size: 13px !important; }
-  #patrimoineSimuleDisplay { font-size: 13px !important; }
-
-  #graphiqueStats {
-    grid-template-columns: repeat(3, 1fr);
-  }
-}
