@@ -3087,6 +3087,41 @@ let homePage, mainPage, monthPage;
   mainPage.id = "mainPage";
   mainPage.style.display = "none";
 
+  // Ajouter dans createPages(), après la création de mainContainer :
+function applyHomeResponsive() {
+  const isMobile = window.innerWidth < 600;
+
+  // Logo + texte : colonne sur mobile, ligne sur desktop
+  mainContainer.style.flexDirection = isMobile ? "column" : "row";
+  mainContainer.style.alignItems = "center";
+  mainContainer.style.textAlign = isMobile ? "center" : "left";
+  mainContainer.style.marginBottom = isMobile ? "30px" : "60px";
+
+  if (logoContainer) {
+    logoContainer.style.marginRight = isMobile ? "0" : "40px";
+    logoContainer.style.marginBottom = isMobile ? "20px" : "0";
+    logoContainer.style.width = isMobile ? "90px" : "140px";
+    logoContainer.style.height = isMobile ? "90px" : "140px";
+  }
+
+  if (appName) {
+    appName.style.fontSize = isMobile ? "32px" : "48px";
+    appName.style.textAlign = isMobile ? "center" : "left";
+  }
+  if (appSubtitle) {
+    appSubtitle.style.fontSize = isMobile ? "15px" : "20px";
+    appSubtitle.style.textAlign = isMobile ? "center" : "left";
+  }
+
+  // Boutons pleine largeur sur mobile
+  if (buttonsContainer) {
+    buttonsContainer.style.maxWidth = isMobile ? "90%" : "320px";
+  }
+}
+
+applyHomeResponsive();
+window.addEventListener("resize", applyHomeResponsive);
+
   // ─── PAGE HOME ────────────────────────────────────────────────────────────
   homePage = document.createElement("div");
   homePage.id = "homePage";
@@ -4535,5 +4570,6 @@ window.addEventListener('orientationchange', () => {
 window.addEventListener('load', () => {
   setTimeout(repositionnerTousBocaux, 100);
 });
+
 
 
