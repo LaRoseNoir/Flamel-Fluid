@@ -3131,16 +3131,24 @@ window.addEventListener("resize", applyHomeResponsive);
     top:             "0",
     left:            "0",
     width:           "100%",
-    height:          "100%",
+    minHeight:       "-webkit-fill-available",
     backgroundColor: "#f2f2f2",
     zIndex:          "30000",
     flexDirection:   "column",
     alignItems:      "center",
-    justifyContent:  "space-between",   // ← répartit sur toute la hauteur
+    justifyContent:  "space-between",
     fontFamily:      "Arial, sans-serif",
     boxSizing:       "border-box",
     padding:         "0"
   });
+
+  homePage.style.pointerEvents = "all";
+homePage.style.touchAction = "auto"; // autorise les taps sur la home
+
+// Empêcher les clics de traverser vers le land derrière
+homePage.addEventListener("touchstart", function(e) {
+  e.stopPropagation();
+}, { passive: true });
 
   // ── ZONE HAUTE : logo + titre ─────────────────────────────────────────────
   const topZone = document.createElement("div");
@@ -4570,6 +4578,7 @@ window.addEventListener('orientationchange', () => {
 window.addEventListener('load', () => {
   setTimeout(repositionnerTousBocaux, 100);
 });
+
 
 
 
